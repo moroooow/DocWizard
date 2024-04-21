@@ -36,7 +36,6 @@ public class HelloApplication extends Application {
      private ArrayList<String> needToSwap = new ArrayList<>();
      private final ArrayList<String> wordToSwap = new ArrayList<>();
 
-
     @Override
     public void start(Stage stage) {
         stage.setTitle("DocWizard");
@@ -75,7 +74,11 @@ public class HelloApplication extends Application {
 
         // create an Event Handler
         EventHandler<ActionEvent> event1 =
-                e -> needToSwap = scanFiles(files);
+                e -> {
+                    if (!files.isEmpty()) {
+                        needToSwap = scanFiles(files);
+                    }
+        };
 
         scanButton.setOnAction(event1);
 
@@ -106,58 +109,60 @@ public class HelloApplication extends Application {
 
         EventHandler<ActionEvent> swapEvent =
                 e -> {
-                    GridPane root = new GridPane();
-                    root.setHgap(8);
-                    root.setVgap(8);
-                    root.setPadding(new Insets(5));
-                    Button submit = new Button("Подтвердить");
+                    if (!files.isEmpty()) {
+                        GridPane root = new GridPane();
+                        root.setHgap(8);
+                        root.setVgap(8);
+                        root.setPadding(new Insets(5));
+                        Button submit = new Button("Подтвердить");
 
 
-                    Stage swapStage = new Stage();
-                    swapStage.setTitle("Введите значения на замену");
-                    for(int i = 0; i < needToSwap.size(); i++){
-                        root.addRow(i, new Label(needToSwap.get(i)), new TextField());
-                    }
-                    root.addRow(needToSwap.size(), submit);
-                    hbox.getChildren().addLast(root);
-                    HBox.setHgrow(root, Priority.ALWAYS);
-
+                        Stage swapStage = new Stage();
+                        swapStage.setTitle("Введите значения на замену");
+                        for (int i = 0; i < needToSwap.size(); i++) {
+                            root.addRow(i, new Label(needToSwap.get(i)), new TextField());
+                        }
+                        root.addRow(needToSwap.size(), submit);
+                        hbox.getChildren().addLast(root);
+                        HBox.setHgrow(root, Priority.ALWAYS);
 //                    swapStage.setScene(new Scene(root, 450, 450));
 //                    swapStage.show();
-
-                    EventHandler<ActionEvent> submitEvent = actionEvent -> {
-                        for(Node ob : root.getChildren()){
-                            if(ob instanceof TextField){
-                                wordToSwap.add(((TextField) ob).getText());
+                        EventHandler<ActionEvent> submitEvent = actionEvent -> {
+                            for(Node ob : root.getChildren()){
+                                if(ob instanceof TextField){
+                                    wordToSwap.add(((TextField) ob).getText());
+                                }
                             }
-                        }
-                        //swapStage.close();
-                    };
 
-                    submit.setOnAction(submitEvent);
+                            //swapStage.close();
+                        };
+
+                        submit.setOnAction(submitEvent);
+                    }
                 };
         swapButton.setOnAction(swapEvent);
 
 
         EventHandler<ActionEvent> createEvent = actionEvent -> {
-            File dir = outputDirChooser.showDialog(stage);
-            for (File file : files){
-                try(FileOutputStream out = new FileOutputStream(dir.getAbsolutePath()+"\\"+"new_"+file.getName());
-                    FileInputStream in =  new FileInputStream(file.getAbsolutePath());
-                    XWPFDocument outDoc = new XWPFDocument();
-                    XWPFDocument inDoc = new XWPFDocument(in)){
+            if (!files.isEmpty()) {
+                File dir = outputDirChooser.showDialog(stage);
+                for (File file : files) {
+                    try (FileOutputStream out = new FileOutputStream(dir.getAbsolutePath() + "\\" + "new_" + file.getName());
+                         FileInputStream in = new FileInputStream(file.getAbsolutePath());
+                         XWPFDocument outDoc = new XWPFDocument();
+                         XWPFDocument inDoc = new XWPFDocument(in)) {
 
-                    List<XWPFParagraph> paragraphs = inDoc.getParagraphs();
-                    List<String> swapped = swapData(paragraphs);
+                        List<XWPFParagraph> paragraphs = inDoc.getParagraphs();
+                        List<String> swapped = swapData(paragraphs);
 
-                    for(String str : swapped){
-                        XWPFParagraph p = outDoc.createParagraph();
-                        XWPFRun run =  p.createRun();
-                        run.setText(str,0);
+                        for (String str : swapped) {
+                            XWPFParagraph p = outDoc.createParagraph();
+                            XWPFRun run = p.createRun();
+                            run.setText(str, 0);
+                        }
+                        outDoc.write(out);
+                    } catch (IOException ignored) {
                     }
-                    outDoc.write(out);
-                }
-                catch (IOException ignored){
                 }
             }
         };
