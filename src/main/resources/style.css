@@ -19,7 +19,7 @@
 }
 
 .custom-toolbar .button:pressed {
-    -fx-background-color: #0037a6;
+    -fx-background-color: #4a86ff;
 }
 
 .custom-toolbar .separator {
