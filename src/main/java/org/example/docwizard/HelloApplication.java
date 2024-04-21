@@ -11,8 +11,9 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.control.ToolBar;
+import javafx.scene.layout.*;
+import javafx.scene.text.Font;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -26,6 +27,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -47,9 +49,11 @@ public class HelloApplication extends Application {
 
         // create a Label
         Label label = new Label("no files selected");
+        label.setFont(new Font(15));
+
 
         //create a Button
-        Button chooseButton = new Button("Show open dialog");
+        Button chooseButton = new Button("Open");
 
         // create an Event Handler
         EventHandler<ActionEvent> event =
@@ -76,13 +80,28 @@ public class HelloApplication extends Application {
         scanButton.setOnAction(event1);
 
 
-        Button swapButton = new Button("Ввести значения для замены");
+        Button swapButton = new Button("Enter to swap");
 
-        Button createButton = new Button("Create a new word document");
+        Button createButton = new Button("Save changes");
 
+        //create a toolBar
+        ToolBar toolBar = new ToolBar();
+
+        toolBar.getStyleClass().add("custom-toolbar");
+        toolBar.getItems().add(chooseButton);
+        toolBar.getItems().add(scanButton);
+        toolBar.getItems().add(swapButton);
+        toolBar.getItems().add(createButton);
 
         // create a VBox
-        VBox vbox = new VBox(30, label, chooseButton, scanButton, swapButton,createButton);
+        //BorderPane bPane = new BorderPane();
+        HBox hbox = new HBox();
+        VBox vbox = new VBox(toolBar, hbox);
+        hbox.getChildren().addFirst(label);
+        HBox.setHgrow(label, Priority.ALWAYS);
+        vbox.getStyleClass().add("custom-root");
+
+
 
 
         EventHandler<ActionEvent> swapEvent =
@@ -100,9 +119,11 @@ public class HelloApplication extends Application {
                         root.addRow(i, new Label(needToSwap.get(i)), new TextField());
                     }
                     root.addRow(needToSwap.size(), submit);
+                    hbox.getChildren().addLast(root);
+                    HBox.setHgrow(root, Priority.ALWAYS);
 
-                    swapStage.setScene(new Scene(root, 450, 450));
-                    swapStage.show();
+//                    swapStage.setScene(new Scene(root, 450, 450));
+//                    swapStage.show();
 
                     EventHandler<ActionEvent> submitEvent = actionEvent -> {
                         for(Node ob : root.getChildren()){
@@ -110,7 +131,7 @@ public class HelloApplication extends Application {
                                 wordToSwap.add(((TextField) ob).getText());
                             }
                         }
-                        swapStage.close();
+                        //swapStage.close();
                     };
 
                     submit.setOnAction(submitEvent);
@@ -143,11 +164,13 @@ public class HelloApplication extends Application {
 
         createButton.setOnAction(createEvent);
 
-        // set Alignment
-        vbox.setAlignment(Pos.CENTER);
+
 
         // create a scene
-        Scene scene = new Scene(vbox, 1080, 720);
+        Scene scene = new Scene(vbox, 600, 400);
+        //Scene scene = new Scene(bPane, 960, 600);
+
+        scene.getStylesheets().add("/style.css");
 
         // set the scene
         stage.setScene(scene);
