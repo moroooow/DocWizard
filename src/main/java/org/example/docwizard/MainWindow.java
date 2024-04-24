@@ -19,6 +19,7 @@ public class MainWindow extends Application {
      private ArrayList<String> needToSwap = new ArrayList<>();
      private final ArrayList<String> wordToSwap = new ArrayList<>();
      private File selectedDir;
+     private TreeItem<File> rootItem;
 
     @Override
     public void start(Stage stage) {
@@ -44,19 +45,16 @@ public class MainWindow extends Application {
         chooseButton.setOnAction(event -> {
             selectedDir = getInputDir(inputDirChooser, stage);
             if(selectedDir != null && selectedDir.canRead() && selectedDir.canWrite()){
-                TreeItem<File> rootItem = new TreeItem<>(selectedDir.getAbsoluteFile());
+                rootItem = new TreeItem<>(selectedDir.getAbsoluteFile());
                 addFilesAndSubdirectories(selectedDir, rootItem);
                 treeView.setRoot(rootItem);
-                mainPane.getItems().addAll(treeView,hbox);
             }
         });
 
-        // create a Button
         Button scanButton = new Button("Scan");
 
         Button createButton = new Button("Save changes");
 
-        //create a toolBar
         ToolBar toolBar = new ToolBar();
 
         toolBar.getStyleClass().add("custom-toolbar");
@@ -66,10 +64,10 @@ public class MainWindow extends Application {
 
         VBox vbox = new VBox(toolBar, mainPane);
 
-
         mainPane.setOrientation(Orientation.HORIZONTAL);
         VBox.setVgrow(mainPane,Priority.ALWAYS);
 
+        mainPane.getItems().addAll(treeView,hbox);
 
         scanButton.setOnAction(event -> {
                     needToSwap = (ArrayList<String>) MainWindowEventHandler.handleScan(treeView.getRoot());
