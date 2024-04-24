@@ -11,7 +11,6 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.stage.DirectoryChooser;
-import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
@@ -26,7 +25,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class EventHandlers {
+public class MainWindowEventHandler {
     private static boolean isScaned = false;
 
     private static List<String> swapData(final List<XWPFParagraph> paragraphs, List<String> needToSwap, List<String> wordToSwap) {
@@ -93,15 +92,6 @@ public class EventHandlers {
         }
         return res;
     }
-    public static void handleChoose(FileChooser inputFileChooser, Stage stage, Label label, List<File> files) {
-        File file = inputFileChooser.showOpenDialog(stage);
-
-        if (file != null) {
-            label.setText(file.getAbsolutePath()
-                    + "  selected");
-            files.add(file);
-        }
-    }
     public static List<String> handleScan(List<File> files) {
         if (!files.isEmpty()) {
             return  scanFiles(files);
@@ -116,10 +106,6 @@ public class EventHandlers {
             root.setVgap(8);
             root.setPadding(new Insets(5));
             Button submit = new Button("Подтвердить");
-
-
-            Stage swapStage = new Stage();
-            swapStage.setTitle("Введите значения на замену");
             for (int i = 0; i < needToSwap.size(); i++) {
                 root.addRow(i, new Label(needToSwap.get(i)), new TextField());
             }
