@@ -2,6 +2,7 @@ package org.example.docwizard;
 
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.geometry.Orientation;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
@@ -18,7 +19,6 @@ import java.util.ArrayList;
 public class MainWindow extends Application {
      private ArrayList<String> needToSwap = new ArrayList<>();
      private final ArrayList<String> wordToSwap = new ArrayList<>();
-
      private File selectedDir;
 
     @Override
@@ -30,18 +30,26 @@ public class MainWindow extends Application {
 
         DirectoryChooser outputDirChooser = new DirectoryChooser();
 
-        TreeView<String> treeView = new TreeView<>();
+        TreeView<File> treeView = new TreeView<>();
+        treeView.setCellFactory(param -> new FileTreeCell());
         treeView.setShowRoot(false);
 
         ArrayList<File> files = new ArrayList<>();
 
         Button chooseButton = new Button("Open");
 
+        SplitPane mainPane = new SplitPane();
+        HBox hbox = new HBox();
+        mainPane.setDividerPosition(0,0.2);
+
         chooseButton.setOnAction(event -> {
             selectedDir = getInputDir(inputDirChooser, stage);
-            TreeItem<String> rootItem = new TreeItem<>(selectedDir.getAbsolutePath());
-            addFilesAndSubdirectories(selectedDir, rootItem);
-            treeView.setRoot(rootItem);
+            if(selectedDir != null && selectedDir.canRead() && selectedDir.canWrite()){
+                TreeItem<File> rootItem = new TreeItem<>(selectedDir.getAbsoluteFile());
+                addFilesAndSubdirectories(selectedDir, rootItem);
+                treeView.setRoot(rootItem);
+                mainPane.getItems().addAll(treeView,hbox);
+            }
         });
 
         // create a Button
@@ -57,14 +65,15 @@ public class MainWindow extends Application {
         toolBar.getItems().add(scanButton);
         toolBar.getItems().add(createButton);
 
+        VBox vbox = new VBox(toolBar, mainPane);
 
-        HBox hbox = new HBox();
-        VBox vbox = new VBox(toolBar, hbox);
-        hbox.getChildren().add(treeView);
-        VBox.setVgrow(hbox,Priority.ALWAYS);
+
+        mainPane.setOrientation(Orientation.HORIZONTAL);
+        VBox.setVgrow(mainPane,Priority.ALWAYS);
+
 
         scanButton.setOnAction(event -> {
-                    needToSwap = (ArrayList<String>) MainWindowEventHandler.handleScan(files);
+                    needToSwap = (ArrayList<String>) MainWindowEventHandler.handleScan(treeView.getRoot());
                     MainWindowEventHandler.handleSwap(files,hbox,needToSwap, wordToSwap);
                 }
         );
@@ -91,20 +100,13 @@ public class MainWindow extends Application {
         return directoryChooser.showDialog(stage);
     }
 
-    private static void configureFileChooser(final FileChooser fileChooser){
-        fileChooser.setInitialDirectory( new File(System.getProperty("user.home")));
-        fileChooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("docx", "*.docx")
-        );
-    }
-
-    private static void addFilesAndSubdirectories(File directory, TreeItem<String> parentItem) {
+    private static void addFilesAndSubdirectories(File directory, TreeItem<File> parentItem) {
         File[] files = directory.listFiles();
         if (files == null ) {
             return;
         }
         for (File file : files) {
-            TreeItem<String> item = new TreeItem<>(file.getName());
+            TreeItem<File> item = new TreeItem<>(file);
             parentItem.getChildren().add(item);
 
             if (file.isDirectory()) {

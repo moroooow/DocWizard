@@ -7,6 +7,7 @@ import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TreeItem;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -81,20 +82,26 @@ public class MainWindowEventHandler {
         }
 
     }
-    private static ArrayList<String> scanFiles(List<File> files) {
-        ArrayList<String> res = new ArrayList<>();
-        for (File file : files) {
-            try (FileInputStream fis = new FileInputStream(file.getAbsolutePath())) {
-                XWPFDocument doc = new XWPFDocument(fis);
-                scanFile(doc, res);
-            } catch (IOException ignored) {
+    private static void scanFiles(TreeItem<File> directory,List<String> collection) {
+        for (TreeItem<File> children : directory.getChildren()) {
+            if(children.getValue().isDirectory()){
+                scanFiles(children,collection);
+                continue;
             }
+            if(!children.getValue().getAbsolutePath().endsWith(".docx") ){
+                continue;
+            }
+            try (FileInputStream fis = new FileInputStream(children.getValue().getAbsolutePath())) {
+                XWPFDocument doc = new XWPFDocument(fis);
+                scanFile(doc, (ArrayList<String>) collection);
+            } catch (IOException ignored) { }
         }
-        return res;
     }
-    public static List<String> handleScan(List<File> files) {
-        if (!files.isEmpty()) {
-            return  scanFiles(files);
+    public static List<String> handleScan(TreeItem<File> rootItem) {
+        ArrayList<String> res = new ArrayList<>();
+        if (rootItem != null) {
+            scanFiles(rootItem,res);
+            return  res;
         }
         return null;
     }
