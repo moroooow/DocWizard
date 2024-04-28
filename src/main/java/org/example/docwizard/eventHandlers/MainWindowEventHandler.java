@@ -106,7 +106,7 @@ public class MainWindowEventHandler {
         return null;
     }
     public static void handleSwap(List<File> files,HBox hbox, List<String> needToSwap, List<String> wordToSwap) {
-        if (!files.isEmpty() && !isScaned) {
+        if (files.isEmpty() && !isScaned) {
             isScaned = true;
             GridPane root = new GridPane();
             root.setHgap(8);
