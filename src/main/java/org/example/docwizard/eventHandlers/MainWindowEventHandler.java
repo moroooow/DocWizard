@@ -98,7 +98,16 @@ public class MainWindowEventHandler {
         }
     }
     public static List<String> handleScan(TreeItem<File> rootItem) {
-        ArrayList<String> res = new ArrayList<>();
+        ArrayList<String> res = new ArrayList<>(){
+            @Override
+            public boolean add(String s) {
+                if (!contains(s)) {
+                    return super.add(s);
+                }
+                return false;
+            }
+        };
+
         if (rootItem != null) {
             scanFiles(rootItem,res);
             return  res;
