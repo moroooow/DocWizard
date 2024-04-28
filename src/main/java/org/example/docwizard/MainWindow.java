@@ -63,6 +63,7 @@ public class MainWindow extends Application {
                 rootItem = new TreeItem<>(selectedDir.getAbsoluteFile());
                 addFilesAndSubdirectories(selectedDir, rootItem);
                 treeView.setRoot(rootItem);
+                MainWindowEventHandler.resetIsScaned();
             }
         });
 

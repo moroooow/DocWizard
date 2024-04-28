@@ -29,6 +29,13 @@ import java.util.regex.Pattern;
 public class MainWindowEventHandler {
     private static boolean isScaned = false;
 
+    private static GridPane root = new GridPane();
+
+    public static void resetIsScaned(){
+        isScaned = false;
+        root.getChildren().clear();
+    }
+
     private static List<String> swapData(final List<XWPFParagraph> paragraphs, List<String> needToSwap, List<String> wordToSwap) {
         List<String> res = new ArrayList<>();
         for (XWPFParagraph par : paragraphs) {
@@ -117,7 +124,6 @@ public class MainWindowEventHandler {
     public static void handleSwap(List<File> files,HBox hbox, List<String> needToSwap, List<String> wordToSwap) {
         if (files.isEmpty() && !isScaned) {
             isScaned = true;
-            GridPane root = new GridPane();
             root.setHgap(8);
             root.setVgap(8);
             root.setPadding(new Insets(5));
