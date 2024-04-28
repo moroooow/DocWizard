@@ -5,14 +5,20 @@ import javafx.application.Platform;
 import javafx.geometry.Orientation;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.MenuItem;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
-import java.awt.Toolkit;
-import java.awt.Dimension;
+
+import java.awt.*;
+
 import org.example.docwizard.eventHandlers.MainWindowEventHandler;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 
 public class MainWindow extends Application {
@@ -33,6 +39,15 @@ public class MainWindow extends Application {
         TreeView<File> treeView = new TreeView<>();
         treeView.setCellFactory(param -> new FileTreeCell());
         treeView.setShowRoot(false);
+
+        treeView.setOnMouseClicked((MouseEvent event) ->{
+            if (event.getButton() == MouseButton.SECONDARY) {
+                TreeItem<File> selectedItem = treeView.getSelectionModel().getSelectedItem();
+                if (selectedItem != null) {
+                    treeView.setContextMenu(configureContextMenu(selectedItem));
+                }
+            }
+        });
 
         ArrayList<File> files = new ArrayList<>();
 
@@ -110,6 +125,20 @@ public class MainWindow extends Application {
                 addFilesAndSubdirectories(file, item);
             }
         }
+    }
+
+    public static ContextMenu configureContextMenu(TreeItem<File> selectedItem){
+        ContextMenu contextMenu = new ContextMenu();
+        MenuItem openInExplorerItem = new MenuItem("Открыть в проводнике");
+        openInExplorerItem.setOnAction(event -> {
+            try{
+                Desktop.getDesktop().open(new File(selectedItem.getValue().getParent()));
+            } catch(IOException ignored){
+            }
+        });
+
+        contextMenu.getItems().add(openInExplorerItem);
+        return contextMenu;
     }
 
 }
