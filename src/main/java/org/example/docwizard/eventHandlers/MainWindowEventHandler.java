@@ -48,15 +48,16 @@ public class MainWindowEventHandler {
         return res;
     }
 
-    public static void handleCreate (List<File> files, DirectoryChooser outputDirChooser, Stage stage, List<String> needToSwap, List<String> wordToSwap){
-        if (!files.isEmpty()) {
+    public static void handleCreate (TreeItem<File> files, DirectoryChooser outputDirChooser, Stage stage, List<String> needToSwap, List<String> wordToSwap){
+        if (!files.getChildren().isEmpty()) {
             File dir = outputDirChooser.showDialog(stage);
             if(dir == null) {
                 return;
             }
-            for (File file : files) {
-                try (FileOutputStream out = new FileOutputStream(dir.getAbsolutePath() + "\\" + "new_" + file.getName());
-                     FileInputStream in = new FileInputStream(file.getAbsolutePath());
+            for (TreeItem<File> file : files.getChildren()) {
+                try (FileOutputStream out = new FileOutputStream(dir.getAbsolutePath() + "\\"
+                        + "new_" + file.getValue().getName());
+                     FileInputStream in = new FileInputStream(file.getValue().getAbsolutePath());
                      XWPFDocument outDoc = new XWPFDocument();
                      XWPFDocument inDoc = new XWPFDocument(in)) {
 
@@ -121,8 +122,8 @@ public class MainWindowEventHandler {
         }
         return null;
     }
-    public static void handleSwap(List<File> files,HBox hbox, List<String> needToSwap, List<String> wordToSwap) {
-        if (files.isEmpty() && !isScaned) {
+    public static void handleSwap(TreeItem<File> files,HBox hbox, List<String> needToSwap, List<String> wordToSwap) {
+        if (!files.getChildren().isEmpty() && !isScaned) {
             isScaned = true;
             root.setHgap(8);
             root.setVgap(8);

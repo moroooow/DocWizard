@@ -49,7 +49,6 @@ public class MainWindow extends Application {
             }
         });
 
-        ArrayList<File> files = new ArrayList<>();
 
         Button chooseButton = new Button("Open");
 
@@ -87,11 +86,11 @@ public class MainWindow extends Application {
 
         scanButton.setOnAction(event -> {
                     needToSwap = (ArrayList<String>) MainWindowEventHandler.handleScan(treeView.getRoot());
-                    MainWindowEventHandler.handleSwap(files,hbox,needToSwap, wordToSwap);
+                    MainWindowEventHandler.handleSwap(rootItem,hbox,needToSwap, wordToSwap);
                 }
         );
 
-        createButton.setOnAction(event -> MainWindowEventHandler.handleCreate(files, outputDirChooser, stage, needToSwap, wordToSwap));
+        createButton.setOnAction(event -> MainWindowEventHandler.handleCreate(rootItem, outputDirChooser, stage, needToSwap, wordToSwap));
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         Scene scene = new Scene(vbox, screenSize.getWidth(), screenSize.getHeight());
         scene.getStylesheets().add("/style.css");
