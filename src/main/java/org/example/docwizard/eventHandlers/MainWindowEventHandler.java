@@ -13,9 +13,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
-import org.apache.poi.xwpf.usermodel.XWPFDocument;
-import org.apache.poi.xwpf.usermodel.XWPFParagraph;
-import org.apache.poi.xwpf.usermodel.XWPFRun;
+import org.apache.poi.xwpf.usermodel.*;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -29,49 +27,33 @@ import java.util.regex.Pattern;
 public class MainWindowEventHandler {
     private static boolean isScaned = false;
 
-    private static GridPane root = new GridPane();
+    private static final GridPane root = new GridPane();
 
     public static void resetIsScaned(){
         isScaned = false;
         root.getChildren().clear();
     }
 
-    private static List<String> swapData(final List<XWPFParagraph> paragraphs, List<String> needToSwap, List<String> wordToSwap) {
-        List<String> res = new ArrayList<>();
-        for (XWPFParagraph par : paragraphs) {
-            String str = par.getText();
-            for (int i = 0; i < needToSwap.size(); i++) {
-                str = str.replace(needToSwap.get(i), wordToSwap.get(i));
-            }
-            res.add(str);
-        }
-        return res;
-    }
-
     public static void handleCreate (TreeItem<File> files, DirectoryChooser outputDirChooser, Stage stage, List<String> needToSwap, List<String> wordToSwap){
         if (!files.getChildren().isEmpty()) {
             File dir = outputDirChooser.showDialog(stage);
+
             if(dir == null) {
                 return;
             }
+
             for (TreeItem<File> file : files.getChildren()) {
+
                 try (FileOutputStream out = new FileOutputStream(dir.getAbsolutePath() + "\\"
                         + "new_" + file.getValue().getName());
                      FileInputStream in = new FileInputStream(file.getValue().getAbsolutePath());
-                     XWPFDocument outDoc = new XWPFDocument();
                      XWPFDocument inDoc = new XWPFDocument(in)) {
 
-                    List<XWPFParagraph> paragraphs = inDoc.getParagraphs();
-                    List<String> swapped = swapData(paragraphs, needToSwap, wordToSwap);
+                    XWPFDocument outDoc = replaceText(inDoc,needToSwap,wordToSwap);
 
-                    for (String str : swapped) {
-                        XWPFParagraph p = outDoc.createParagraph();
-                        XWPFRun run = p.createRun();
-                        run.setText(str, 0);
-                    }
                     outDoc.write(out);
-                } catch (IOException ignored) {
-                }
+                } catch (IOException ignored) {}
+
             }
         }
     }
@@ -80,7 +62,7 @@ public class MainWindowEventHandler {
         List<XWPFParagraph> paragraphs = doc.getParagraphs();
         for (XWPFParagraph par : paragraphs) {
             String str = par.getText();
-            Pattern p = Pattern.compile("<.+>");
+            Pattern p = Pattern.compile("##+[^:,.\\s\\t\\n]+");
             Matcher m = p.matcher(str);
             while (m.find()) {
                 int start = m.start();
@@ -90,6 +72,50 @@ public class MainWindowEventHandler {
         }
 
     }
+
+    private static XWPFDocument replaceText(XWPFDocument doc, List<String> originalText, List<String> updatedText) {
+        replaceTextInParagraphs(doc.getParagraphs(), originalText, updatedText);
+        for (XWPFTable tbl : doc.getTables()) {
+            for (XWPFTableRow row : tbl.getRows()) {
+                for (XWPFTableCell cell : row.getTableCells()) {
+                    replaceTextInParagraphs(cell.getParagraphs(), originalText, updatedText);
+                }
+            }
+        }
+        return doc;
+    }
+    private static void replaceTextInParagraphs(List<XWPFParagraph> paragraphs, List<String> originalText, List<String> updatedText) {
+        paragraphs.forEach(paragraph -> replaceTextInParagraph(paragraph, originalText, updatedText));
+    }
+    private static void replaceTextInParagraph(XWPFParagraph paragraph, List<String> originalText, List<String> updatedText) {
+        String paragraphText = paragraph.getParagraphText();
+        for(int i = 0; i < originalText.size(); i ++){
+            if (!paragraphText.contains(originalText.get(i))) {
+                continue;
+            }
+            paragraphText = paragraphText.replace(originalText.get(i), updatedText.get(i));
+
+            while (paragraph.getRuns().size() > 0) {
+                paragraph.removeRun(0);
+            }
+
+        }
+
+        XWPFRun newRun = paragraph.createRun();
+
+        if(paragraphText.contains("\n")){
+            String[] lines = paragraphText.split("\n");
+            newRun.setText(lines[0], 0);
+
+            for(int j=1; j<lines.length; j++){
+                newRun.addBreak();
+                newRun.setText(lines[j]);
+            }
+        } else {
+            newRun.setText(paragraphText);
+        }
+    }
+
     private static void scanFiles(TreeItem<File> directory,List<String> collection) {
         for (TreeItem<File> children : directory.getChildren()) {
             if(children.getValue().isDirectory()){
@@ -133,7 +159,7 @@ public class MainWindowEventHandler {
                 root.addRow(i, new Label(needToSwap.get(i)), new TextField());
             }
             root.addRow(needToSwap.size(), submit);
-            hbox.getChildren().addLast(root);
+            hbox.getChildren().add(root);
             HBox.setHgrow(root, Priority.ALWAYS);
             EventHandler<ActionEvent> submitEvent = actionEvent -> {
                 for (Node ob : root.getChildren()) {
@@ -142,7 +168,6 @@ public class MainWindowEventHandler {
                     }
                 }
 
-                //swapStage.close();
             };
 
             submit.setOnAction(submitEvent);
