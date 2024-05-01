@@ -26,38 +26,35 @@ import java.util.regex.Pattern;
 
 public class MainWindowEventHandler {
     private static boolean isScaned = false;
-
     private static final GridPane root = new GridPane();
-
     public static void resetIsScaned(){
         isScaned = false;
         root.getChildren().clear();
     }
-
     public static void handleCreate (TreeItem<File> files, DirectoryChooser outputDirChooser, Stage stage, List<String> needToSwap, List<String> wordToSwap){
-        if (!files.getChildren().isEmpty()) {
-            File dir = outputDirChooser.showDialog(stage);
+        if (files.getChildren().isEmpty()) {
+            return;
+        }
+        File dir = outputDirChooser.showDialog(stage);
 
-            if(dir == null) {
-                return;
-            }
+        if(dir == null) {
+            return;
+        }
 
-            for (TreeItem<File> file : files.getChildren()) {
+        for (TreeItem<File> file : files.getChildren()) {
 
-                try (FileOutputStream out = new FileOutputStream(dir.getAbsolutePath() + "\\"
-                        + "new_" + file.getValue().getName());
-                     FileInputStream in = new FileInputStream(file.getValue().getAbsolutePath());
-                     XWPFDocument inDoc = new XWPFDocument(in)) {
+            try (FileOutputStream out = new FileOutputStream(dir.getAbsolutePath() + "\\"
+                    + "new_" + file.getValue().getName());
+                 FileInputStream in = new FileInputStream(file.getValue().getAbsolutePath());
+                 XWPFDocument inDoc = new XWPFDocument(in)) {
 
-                    XWPFDocument outDoc = replaceText(inDoc,needToSwap,wordToSwap);
+                XWPFDocument outDoc = replaceText(inDoc,needToSwap,wordToSwap);
 
-                    outDoc.write(out);
-                } catch (IOException ignored) {}
+                outDoc.write(out);
+            } catch (IOException ignored) {}
 
-            }
         }
     }
-
     private static void scanFile(XWPFDocument doc, ArrayList<String> res) {
         List<XWPFParagraph> paragraphs = doc.getParagraphs();
         for (XWPFParagraph par : paragraphs) {
@@ -72,7 +69,6 @@ public class MainWindowEventHandler {
         }
 
     }
-
     private static XWPFDocument replaceText(XWPFDocument doc, List<String> originalText, List<String> updatedText) {
         replaceTextInParagraphs(doc.getParagraphs(), originalText, updatedText);
         for (XWPFTable tbl : doc.getTables()) {
@@ -88,23 +84,24 @@ public class MainWindowEventHandler {
         paragraphs.forEach(paragraph -> replaceTextInParagraph(paragraph, originalText, updatedText));
     }
     private static void replaceTextInParagraph(XWPFParagraph paragraph, List<String> originalText, List<String> updatedText) {
-        String paragraphText = paragraph.getParagraphText();
+        StringBuilder paragraphText = new StringBuilder(paragraph.getParagraphText());
+
         for(int i = 0; i < originalText.size(); i ++){
-            if (!paragraphText.contains(originalText.get(i))) {
+            if (!paragraphText.toString().contains(originalText.get(i))) {
                 continue;
             }
-            paragraphText = paragraphText.replace(originalText.get(i), updatedText.get(i));
+
+            replaceAll(paragraphText,originalText.get(i), updatedText.get(i));
 
             while (paragraph.getRuns().size() > 0) {
                 paragraph.removeRun(0);
             }
-
         }
 
         XWPFRun newRun = paragraph.createRun();
 
-        if(paragraphText.contains("\n")){
-            String[] lines = paragraphText.split("\n");
+        if(paragraphText.toString().contains("\n")){
+            String[] lines = paragraphText.toString().split("\n");
             newRun.setText(lines[0], 0);
 
             for(int j=1; j<lines.length; j++){
@@ -112,10 +109,20 @@ public class MainWindowEventHandler {
                 newRun.setText(lines[j]);
             }
         } else {
-            newRun.setText(paragraphText);
+            newRun.setText(paragraphText.toString());
         }
     }
+    private static void replaceAll(StringBuilder sb, String find, String replace){
+        Pattern p = Pattern.compile(find);
+        Matcher matcher = p.matcher(sb);
+        int startIndex = 0;
+        while(matcher.find(startIndex)){
+            sb.replace(matcher.start(),matcher.end(),replace);
 
+            startIndex = matcher.start() + replace.length();
+        }
+
+    }
     private static void scanFiles(TreeItem<File> directory,List<String> collection) {
         for (TreeItem<File> children : directory.getChildren()) {
             if(children.getValue().isDirectory()){
@@ -174,4 +181,3 @@ public class MainWindowEventHandler {
         }
     }
 }
-
