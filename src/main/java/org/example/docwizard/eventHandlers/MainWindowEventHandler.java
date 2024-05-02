@@ -21,6 +21,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -32,6 +33,19 @@ public class MainWindowEventHandler {
         root.getChildren().clear();
     }
     public static void handleCreate (TreeItem<File> files, DirectoryChooser outputDirChooser, Stage stage, List<String> needToSwap, List<String> wordToSwap){
+        boolean fieldsFilled = true;
+        for (Node ob : root.getChildren()) {
+            if (ob instanceof TextField) {
+                if(Objects.equals(((TextField) ob).getText(), ""))
+                {
+                    ((TextField) ob).setPromptText("Поле не заполнено");
+                    fieldsFilled = false;
+                }
+            }
+        }
+        if(!fieldsFilled)
+            return;
+
         if (files.getChildren().isEmpty()) {
             return;
         }
@@ -93,7 +107,7 @@ public class MainWindowEventHandler {
 
             replaceAll(paragraphText,originalText.get(i), updatedText.get(i));
 
-            while (paragraph.getRuns().size() > 0) {
+            while (!paragraph.getRuns().isEmpty()) {
                 paragraph.removeRun(0);
             }
         }
