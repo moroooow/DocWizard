@@ -28,11 +28,10 @@ import java.util.regex.Pattern;
 
 public class MainWindowEventHandler {
     private static boolean isScaned = false;
-    private static boolean isDrawed = false;
+    //private static boolean isDrawed = false;
     private static final GridPane root = new GridPane();
     public static void resetIsScaned(){
         isScaned = false;
-        root.getChildren().clear();
     }
 
     private static List<File> getDocxFiles(TreeItem<File> root){
@@ -59,6 +58,8 @@ public class MainWindowEventHandler {
         if (files.getChildren().isEmpty()) {
             return;
         }
+
+        validateAndSaveData(wordToSwap);
 
         if(!isScaned){
             Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -233,11 +234,10 @@ public class MainWindowEventHandler {
         return null;
     }
     public static void handleSwap(HBox hbox, List<String> needToSwap, List<String> wordToSwap) {
-        if(!isDrawed) {
-            renderFields(needToSwap, wordToSwap);
-            hbox.getChildren().add(root);
-            isDrawed = true;
-        }
+        root.getChildren().clear();
+        renderFields(needToSwap, wordToSwap);
+        hbox.getChildren().clear();
+        hbox.getChildren().add(root);
     }
 
     public static void renderFields(List<String> needToSwap, List<String> wordToSwap){
@@ -267,9 +267,7 @@ public class MainWindowEventHandler {
                 }
             }
         }
-        if(isFieldFilled){
-            isScaned = true;
-        }
+        isScaned = isFieldFilled;
     }
 
 }
