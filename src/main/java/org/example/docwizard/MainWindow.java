@@ -91,7 +91,7 @@ public class MainWindow extends Application {
 
         scanButton.setOnAction(event -> {
                     needToSwap = (ArrayList<String>) MainWindowEventHandler.handleScan(treeView.getRoot());
-                    MainWindowEventHandler.handleSwap(rootItem,hbox,needToSwap, wordToSwap);
+                    MainWindowEventHandler.handleSwap(hbox,needToSwap, wordToSwap);
                 }
         );
 
