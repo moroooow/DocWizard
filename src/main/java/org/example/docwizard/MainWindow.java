@@ -26,10 +26,15 @@ public class MainWindow extends Application {
      private final ArrayList<String> wordToSwap = new ArrayList<>();
      private File selectedDir;
      private TreeItem<File> rootItem;
+     public final double minScreenWidth = 842.0;
+     public final double minScreenHeight = 592.0;
 
     @Override
     public void start(Stage stage) {
         stage.setTitle("DocWizard");
+        stage.setMaximized(true);
+        stage.setMinWidth(minScreenWidth);
+        stage.setMinHeight(minScreenHeight);
         // create a File chooser
         DirectoryChooser inputDirChooser = new DirectoryChooser();
         inputDirChooser.setTitle("Выберите папку: ");
@@ -91,8 +96,7 @@ public class MainWindow extends Application {
         );
 
         createButton.setOnAction(event -> MainWindowEventHandler.handleCreate(rootItem, outputDirChooser, stage, needToSwap, wordToSwap));
-        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        Scene scene = new Scene(vbox, screenSize.getWidth(), screenSize.getHeight());
+        Scene scene = new Scene(vbox,minScreenWidth , minScreenHeight);
         scene.getStylesheets().add("/style.css");
 
         // set the scene
