@@ -17,6 +17,7 @@ import java.awt.*;
 
 import org.example.docwizard.eventHandlers.MainWindowEventHandler;
 
+import javafx.scene.control.TextField;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -44,7 +45,7 @@ public class MainWindow extends Application {
 
         TreeView<File> treeView = new TreeView<>();
         treeView.setCellFactory(param -> new FileTreeCell());
-        treeView.setShowRoot(false);
+        treeView.setShowRoot(true);
 
         treeView.setOnMouseClicked((MouseEvent event) ->{
             if (event.getButton() == MouseButton.SECONDARY) {
@@ -54,6 +55,10 @@ public class MainWindow extends Application {
                 }
             }
         });
+
+        TextField hintField = new TextField(
+                "Наведите кусор на кнопку, чтобы увидеть подсказку");
+        hintField.setEditable(false);
 
 
         Button chooseButton = new Button("Open");
@@ -71,7 +76,7 @@ public class MainWindow extends Application {
                 MainWindowEventHandler.resetIsScaned();
             }
         });
-
+        setHoverHintMessage(hintField, chooseButton, "Открыть папку с файлами");
         Button scanButton = new Button("Scan");
 
         Button createButton = new Button("Save changes");
@@ -83,7 +88,7 @@ public class MainWindow extends Application {
         toolBar.getItems().add(scanButton);
         toolBar.getItems().add(createButton);
 
-        VBox vbox = new VBox(toolBar, mainPane);
+        VBox vbox = new VBox(toolBar, mainPane,hintField);
 
         mainPane.setOrientation(Orientation.HORIZONTAL);
         VBox.setVgrow(mainPane,Priority.ALWAYS);
@@ -95,10 +100,14 @@ public class MainWindow extends Application {
                     MainWindowEventHandler.handleSwap(hbox,needToSwap, wordToSwap);
                 }
         );
+        setHoverHintMessage(hintField, scanButton, "Найти все заполняемые поля в документах в текущей папке");
 
         createButton.setOnAction(event -> MainWindowEventHandler.handleCreate(rootItem, outputDirChooser, stage, needToSwap, wordToSwap));
         Scene scene = new Scene(vbox,minScreenWidth , minScreenHeight);
         scene.getStylesheets().add("/style.css");
+
+        setHoverHintMessage(hintField, createButton, "Сохранить все измененные поля и создать новый файл на их основе");
+
 
         // set the scene
         stage.setScene(scene);
@@ -151,6 +160,16 @@ public class MainWindow extends Application {
         contextMenu.getItems().add(openInExplorerItem);
         contextMenu.getItems().add(scanSelected);
         return contextMenu;
+    }
+
+    private void setHoverHintMessage(TextField hintField, Button button, String message){
+        button.hoverProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue) {
+                hintField.setText(message);
+            } else {
+                hintField.setText("Наведите кусор на кнопку, чтобы увидеть подсказку");
+            }
+        });
     }
 
 }
