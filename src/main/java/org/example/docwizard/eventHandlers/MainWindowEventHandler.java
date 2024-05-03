@@ -252,7 +252,9 @@ public class MainWindowEventHandler {
         }
 
         submit.setOnAction(e -> validateAndSaveData(wordToSwap));
-        root.addRow(needToSwap.size(),submit);
+        if(!root.getChildren().isEmpty()) {
+            root.addRow(needToSwap.size(), submit);
+        }
     }
 
     private static void validateAndSaveData(List<String> wordToSwap){

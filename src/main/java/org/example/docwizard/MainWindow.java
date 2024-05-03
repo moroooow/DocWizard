@@ -26,6 +26,7 @@ public class MainWindow extends Application {
      private final ArrayList<String> wordToSwap = new ArrayList<>();
      private File selectedDir;
      private TreeItem<File> rootItem;
+     private HBox hbox;
      public final double minScreenWidth = 842.0;
      public final double minScreenHeight = 592.0;
 
@@ -58,7 +59,7 @@ public class MainWindow extends Application {
         Button chooseButton = new Button("Open");
 
         SplitPane mainPane = new SplitPane();
-        HBox hbox = new HBox();
+        hbox = new HBox();
         mainPane.setDividerPosition(0,0.2);
 
         chooseButton.setOnAction(event -> {
@@ -131,9 +132,10 @@ public class MainWindow extends Application {
         }
     }
 
-    public static ContextMenu configureContextMenu(TreeItem<File> selectedItem){
+    public ContextMenu configureContextMenu(TreeItem<File> selectedItem){
         ContextMenu contextMenu = new ContextMenu();
         MenuItem openInExplorerItem = new MenuItem("Открыть в проводнике");
+        MenuItem scanSelected = new MenuItem("Сканировать выбранное");
         openInExplorerItem.setOnAction(event -> {
             try{
                 Desktop.getDesktop().open(new File(selectedItem.getValue().getParent()));
@@ -141,7 +143,13 @@ public class MainWindow extends Application {
             }
         });
 
+        scanSelected.setOnAction(event->{
+            needToSwap = (ArrayList<String>) MainWindowEventHandler.handleScan(selectedItem);
+            MainWindowEventHandler.handleSwap(hbox,needToSwap, wordToSwap);
+        });
+
         contextMenu.getItems().add(openInExplorerItem);
+        contextMenu.getItems().add(scanSelected);
         return contextMenu;
     }
 
