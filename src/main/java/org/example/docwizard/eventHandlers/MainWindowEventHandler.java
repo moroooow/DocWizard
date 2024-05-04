@@ -28,7 +28,6 @@ import java.util.regex.Pattern;
 
 public class MainWindowEventHandler {
     private static boolean isScanned = false;
-    private static boolean isDrawn = false;
     private static final GridPane root = new GridPane();
     public static void resetIsScanned(){
         isScanned = false;
@@ -91,24 +90,16 @@ public class MainWindowEventHandler {
     }
 
     private static String[][] scanExcel(HSSFWorkbook xlsx){
+        HSSFSheet sheet = xlsx.getSheetAt(0); //only first sheet will be taken(IDK how to take all sheets)
 
-        String[][] allValues = new String[0][];
-
-        HSSFSheet sheet = xlsx.getSheetAt(0); //only first sheet will be taken(idk how to take all sheets)
+        String[][] allValues = new String[sheet.getLastRowNum() - sheet.getFirstRowNum()][];
 
         Iterator<Row> rowIter = sheet.rowIterator();
         int index = 0;
 
         while (rowIter.hasNext()) {
-
             HSSFRow row = (HSSFRow) rowIter.next();
-            int count = 0;
-
-            for (String cell : scanExcelRow(row)){
-
-                allValues[index][count] = cell;
-                count++;
-            }
+            allValues[index] = scanExcelRow(row);
             index++;
         }
 
@@ -117,7 +108,7 @@ public class MainWindowEventHandler {
 
     private static String[] scanExcelRow(HSSFRow row){
 
-        String[] cells = new String[0];
+        String[] cells = new String[row.getLastCellNum() - row.getFirstCellNum()];
         int index = 0;
         Iterator<Cell> cellIter = row.cellIterator();
         while (cellIter.hasNext()) {
