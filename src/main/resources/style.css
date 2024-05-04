@@ -1,0 +1,32 @@
+.custom-root {
+    -fx-background-color: #fff;
+}
+
+.custom-toolbar {
+    -fx-background-color: #fff;
+    -fx-border-color: #8792a8;
+    -fx-border-width: 1px;
+}
+
+.custom-toolbar .button {
+    -fx-background-color: #fff;
+    -fx-text-fill: black;
+    -fx-font-size: 12px;
+}
+
+.custom-toolbar .button:hover {
+    -fx-background-color: #e4e9f5;
+}
+
+.custom-toolbar .button:pressed {
+    -fx-background-color: #4a86ff;
+}
+
+.custom-toolbar .separator {
+    -fx-background-color: #cccccc;
+    -fx-border-width: 1px;
+}
+
+.custom-toolbar .button .graphic {
+    -fx-fill: #ffffff;
+}
