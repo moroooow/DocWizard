@@ -21,15 +21,16 @@ import javafx.scene.control.TextField;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Optional;
 
 public class MainWindow extends Application {
      private ArrayList<String> needToSwap = new ArrayList<>();
      private final ArrayList<String> wordToSwap = new ArrayList<>();
      private File selectedDir;
      private TreeItem<File> rootItem;
-     private HBox hbox;
      public final double minScreenWidth = 842.0;
      public final double minScreenHeight = 592.0;
+     private static File dataExcelFile;
 
     @Override
     public void start(Stage stage) {
@@ -45,7 +46,7 @@ public class MainWindow extends Application {
 
         TreeView<File> treeView = new TreeView<>();
         treeView.setCellFactory(param -> new FileTreeCell());
-        treeView.setShowRoot(true);
+        treeView.setShowRoot(false);
 
         treeView.setOnMouseClicked((MouseEvent event) ->{
             if (event.getButton() == MouseButton.SECONDARY) {
@@ -64,7 +65,7 @@ public class MainWindow extends Application {
         Button chooseButton = new Button("Open");
 
         SplitPane mainPane = new SplitPane();
-        hbox = new HBox();
+        HBox hbox = new HBox();
         mainPane.setDividerPosition(0,0.2);
 
         chooseButton.setOnAction(event -> {
@@ -73,7 +74,7 @@ public class MainWindow extends Application {
                 rootItem = new TreeItem<>(selectedDir.getAbsoluteFile());
                 addFilesAndSubdirectories(selectedDir, rootItem);
                 treeView.setRoot(rootItem);
-                MainWindowEventHandler.resetIsScaned();
+                MainWindowEventHandler.resetIsScanned();
             }
         });
         setHoverHintMessage(hintField, chooseButton, "Открыть папку с файлами");
@@ -96,6 +97,22 @@ public class MainWindow extends Application {
         mainPane.getItems().addAll(treeView,hbox);
 
         scanButton.setOnAction(event -> {
+                    if(dataExcelFile == null){
+                        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                        alert.setTitle("Информационный файл не выбран");
+                        alert.setHeaderText(null);
+                        alert.setContentText("Информационный файл не выбран, проверьте.\n Нажмите ОК, чтобы продолжить работу без информационного файла.");
+                        ButtonType buttonTypeOk = new ButtonType("ОК");
+                        ButtonType buttonTypeCancel = new ButtonType("Отмена");
+
+                        alert.getButtonTypes().setAll(buttonTypeOk,buttonTypeCancel);
+
+                        Optional<ButtonType> res = alert.showAndWait();
+                        if(res.isPresent() && res.get() == buttonTypeCancel){
+                            return;
+                        }
+
+                    }
                     needToSwap = (ArrayList<String>) MainWindowEventHandler.handleScan(treeView.getRoot());
                     MainWindowEventHandler.handleSwap(hbox,needToSwap, wordToSwap);
                 }
@@ -141,10 +158,9 @@ public class MainWindow extends Application {
         }
     }
 
-    public ContextMenu configureContextMenu(TreeItem<File> selectedItem){
+    public static ContextMenu configureContextMenu(TreeItem<File> selectedItem){
         ContextMenu contextMenu = new ContextMenu();
         MenuItem openInExplorerItem = new MenuItem("Открыть в проводнике");
-        MenuItem scanSelected = new MenuItem("Сканировать выбранное");
         openInExplorerItem.setOnAction(event -> {
             try{
                 Desktop.getDesktop().open(new File(selectedItem.getValue().getParent()));
@@ -152,13 +168,23 @@ public class MainWindow extends Application {
             }
         });
 
-        scanSelected.setOnAction(event->{
-            needToSwap = (ArrayList<String>) MainWindowEventHandler.handleScan(selectedItem);
-            MainWindowEventHandler.handleSwap(hbox,needToSwap, wordToSwap);
+        MenuItem deleteItem = new MenuItem("Исключить файл из проекта");
+        deleteItem.setOnAction(actionEvent -> {
+            TreeItem<File> parentItem = selectedItem.getParent();
+            if(selectedItem.getValue() == dataExcelFile){
+                dataExcelFile = null;
+            }
+            parentItem.getChildren().remove(selectedItem);
         });
 
-        contextMenu.getItems().add(openInExplorerItem);
-        contextMenu.getItems().add(scanSelected);
+        MenuItem setDataExcelFile = new MenuItem("Установить файл информационным");
+        setDataExcelFile.setOnAction(actionEvent -> dataExcelFile = selectedItem.getValue());
+
+        contextMenu.getItems().addAll(openInExplorerItem, deleteItem);
+        if(selectedItem.getValue().getName().endsWith(".xlsx")){
+            contextMenu.getItems().add(setDataExcelFile);
+        }
+
         return contextMenu;
     }
 

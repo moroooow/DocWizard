@@ -27,11 +27,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class MainWindowEventHandler {
-    private static boolean isScaned = false;
-    //private static boolean isDrawed = false;
+    private static boolean isScanned = false;
     private static final GridPane root = new GridPane();
-    public static void resetIsScaned(){
-        isScaned = false;
+    public static void resetIsScanned(){
+        isScanned = false;
+        root.getChildren().clear();
     }
 
     private static List<File> getDocxFiles(TreeItem<File> root){
@@ -59,11 +59,10 @@ public class MainWindowEventHandler {
             return;
         }
 
-        validateAndSaveData(wordToSwap);
-
-        if(!isScaned){
+        if(!isScanned){
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Error");
+            alert.setHeaderText(null);
             alert.setContentText("No replacement word found, check all fields!");
             alert.showAndWait();
             return;
@@ -91,24 +90,16 @@ public class MainWindowEventHandler {
     }
 
     private static String[][] scanExcel(HSSFWorkbook xlsx){
+        HSSFSheet sheet = xlsx.getSheetAt(0); //only first sheet will be taken(IDK how to take all sheets)
 
-        String[][] allValues = new String[0][];
-
-        HSSFSheet sheet = xlsx.getSheetAt(0); //only first sheet will be taken(idk how to take all sheets)
+        String[][] allValues = new String[sheet.getLastRowNum() - sheet.getFirstRowNum()][];
 
         Iterator<Row> rowIter = sheet.rowIterator();
         int index = 0;
 
         while (rowIter.hasNext()) {
-
             HSSFRow row = (HSSFRow) rowIter.next();
-            int count = 0;
-
-            for (String cell : scanExcelRow(row)){
-
-                allValues[index][count] = cell;
-                count++;
-            }
+            allValues[index] = scanExcelRow(row);
             index++;
         }
 
@@ -117,7 +108,7 @@ public class MainWindowEventHandler {
 
     private static String[] scanExcelRow(HSSFRow row){
 
-        String[] cells = new String[0];
+        String[] cells = new String[row.getLastCellNum() - row.getFirstCellNum()];
         int index = 0;
         Iterator<Cell> cellIter = row.cellIterator();
         while (cellIter.hasNext()) {
@@ -240,7 +231,7 @@ public class MainWindowEventHandler {
         hbox.getChildren().add(root);
     }
 
-    public static void renderFields(List<String> needToSwap, List<String> wordToSwap){
+    private static void renderFields(List<String> needToSwap, List<String> wordToSwap){
         root.setHgap(8);
         root.setVgap(8);
         root.setPadding(new Insets(5));
@@ -269,7 +260,9 @@ public class MainWindowEventHandler {
                 }
             }
         }
-        isScaned = isFieldFilled;
+        if(isFieldFilled){
+            isScanned = true;
+        }
     }
 
 }
