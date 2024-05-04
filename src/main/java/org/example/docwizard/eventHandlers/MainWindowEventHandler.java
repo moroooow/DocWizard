@@ -8,6 +8,12 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
+import org.apache.poi.hssf.usermodel.HSSFCell;
+import org.apache.poi.hssf.usermodel.HSSFRow;
+import org.apache.poi.hssf.usermodel.HSSFSheet;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xwpf.usermodel.*;
 
 import java.io.File;
@@ -15,6 +21,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -81,6 +88,44 @@ public class MainWindowEventHandler {
             } catch (IOException ignored) {}
 
         }
+    }
+
+    private static String[][] scanExcel(HSSFWorkbook xlsx){
+
+        String[][] allValues = new String[0][];
+
+        HSSFSheet sheet = xlsx.getSheetAt(0); //only first sheet will be taken(idk how to take all sheets)
+
+        Iterator<Row> rowIter = sheet.rowIterator();
+        int index = 0;
+
+        while (rowIter.hasNext()) {
+
+            HSSFRow row = (HSSFRow) rowIter.next();
+            int count = 0;
+
+            for (String cell : scanExcelRow(row)){
+
+                allValues[index][count] = cell;
+                count++;
+            }
+            index++;
+        }
+
+        return allValues;
+    }
+
+    private static String[] scanExcelRow(HSSFRow row){
+
+        String[] cells = new String[0];
+        int index = 0;
+        Iterator<Cell> cellIter = row.cellIterator();
+        while (cellIter.hasNext()) {
+            HSSFCell cell = (HSSFCell) cellIter.next();
+            cells[index] = cell.getStringCellValue();
+            index++;
+        }
+        return cells;
     }
     private static void scanFile(XWPFDocument doc, ArrayList<String> res) {
         List<XWPFParagraph> paragraphs = doc.getParagraphs();
@@ -151,6 +196,7 @@ public class MainWindowEventHandler {
         int startIndex = 0;
         while(matcher.find(startIndex)){
             sb.replace(matcher.start(),matcher.end(),replace);
+
             startIndex = matcher.start() + replace.length();
         }
 
@@ -188,11 +234,10 @@ public class MainWindowEventHandler {
         return null;
     }
     public static void handleSwap(HBox hbox, List<String> needToSwap, List<String> wordToSwap) {
-        if(!isDrawn) {
-            renderFields(needToSwap, wordToSwap);
-            hbox.getChildren().add(root);
-            isDrawn = true;
-        }
+        root.getChildren().clear();
+        renderFields(needToSwap, wordToSwap);
+        hbox.getChildren().clear();
+        hbox.getChildren().add(root);
     }
 
     private static void renderFields(List<String> needToSwap, List<String> wordToSwap){
@@ -207,7 +252,9 @@ public class MainWindowEventHandler {
         }
 
         submit.setOnAction(e -> validateAndSaveData(wordToSwap));
-        root.addRow(needToSwap.size(),submit);
+        if(!root.getChildren().isEmpty()) {
+            root.addRow(needToSwap.size(), submit);
+        }
     }
 
     private static void validateAndSaveData(List<String> wordToSwap){
