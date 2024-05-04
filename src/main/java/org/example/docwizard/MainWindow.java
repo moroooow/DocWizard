@@ -120,7 +120,7 @@ public class MainWindow extends Application {
         );
         setHoverHintMessage(hintField, scanButton, "Найти все заполняемые поля в документах в текущей папке");
 
-        createButton.setOnAction(event -> MainWindowEventHandler.handleCreate(rootItem, outputDirChooser, stage, needToSwap, wordToSwap));
+        createButton.setOnAction(event -> MainWindowEventHandler.handleCreate(rootItem,dataExcelFile, outputDirChooser, stage, needToSwap, wordToSwap));
         Scene scene = new Scene(vbox,minScreenWidth , minScreenHeight);
         scene.getStylesheets().add("/style.css");
 
