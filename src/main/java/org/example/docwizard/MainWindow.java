@@ -29,6 +29,8 @@ public class MainWindow extends Application {
      public final double minScreenWidth = 842.0;
      public final double minScreenHeight = 592.0;
 
+     private static File dataExcelFile;
+
     @Override
     public void start(Stage stage) {
         stage.setTitle("DocWizard");
@@ -67,7 +69,7 @@ public class MainWindow extends Application {
                 rootItem = new TreeItem<>(selectedDir.getAbsoluteFile());
                 addFilesAndSubdirectories(selectedDir, rootItem);
                 treeView.setRoot(rootItem);
-                MainWindowEventHandler.resetIsScaned();
+                MainWindowEventHandler.resetIsScanned();
             }
         });
 
@@ -96,7 +98,7 @@ public class MainWindow extends Application {
         );
 
         createButton.setOnAction(event -> MainWindowEventHandler.handleCreate(rootItem, outputDirChooser, stage, needToSwap, wordToSwap));
-        Scene scene = new Scene(vbox,minScreenWidth , minScreenHeight);
+        Scene scene = new Scene(vbox, minScreenWidth, minScreenHeight);
         scene.getStylesheets().add("/style.css");
 
         // set the scene
@@ -129,6 +131,7 @@ public class MainWindow extends Application {
                 addFilesAndSubdirectories(file, item);
             }
         }
+
     }
 
     public static ContextMenu configureContextMenu(TreeItem<File> selectedItem){
@@ -141,7 +144,14 @@ public class MainWindow extends Application {
             }
         });
 
+        MenuItem setDataExcelFile = new MenuItem("Установить файл информационным");
+        setDataExcelFile.setOnAction(actionEvent -> dataExcelFile = selectedItem.getValue());
+
         contextMenu.getItems().add(openInExplorerItem);
+        if(selectedItem.getValue().getName().endsWith(".xlsx")){
+            contextMenu.getItems().add(setDataExcelFile);
+        }
+
         return contextMenu;
     }
 

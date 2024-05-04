@@ -20,11 +20,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class MainWindowEventHandler {
-    private static boolean isScaned = false;
-    private static boolean isDrawed = false;
+    private static boolean isScanned = false;
+    private static boolean isDrawn = false;
     private static final GridPane root = new GridPane();
-    public static void resetIsScaned(){
-        isScaned = false;
+    public static void resetIsScanned(){
+        isScanned = false;
         root.getChildren().clear();
     }
 
@@ -53,9 +53,10 @@ public class MainWindowEventHandler {
             return;
         }
 
-        if(!isScaned){
+        if(!isScanned){
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Error");
+            alert.setHeaderText(null);
             alert.setContentText("No replacement word found, check all fields!");
             alert.showAndWait();
             return;
@@ -150,7 +151,6 @@ public class MainWindowEventHandler {
         int startIndex = 0;
         while(matcher.find(startIndex)){
             sb.replace(matcher.start(),matcher.end(),replace);
-
             startIndex = matcher.start() + replace.length();
         }
 
@@ -188,14 +188,14 @@ public class MainWindowEventHandler {
         return null;
     }
     public static void handleSwap(HBox hbox, List<String> needToSwap, List<String> wordToSwap) {
-        if(!isDrawed) {
+        if(!isDrawn) {
             renderFields(needToSwap, wordToSwap);
             hbox.getChildren().add(root);
-            isDrawed = true;
+            isDrawn = true;
         }
     }
 
-    public static void renderFields(List<String> needToSwap, List<String> wordToSwap){
+    private static void renderFields(List<String> needToSwap, List<String> wordToSwap){
         root.setHgap(8);
         root.setVgap(8);
         root.setPadding(new Insets(5));
@@ -223,7 +223,7 @@ public class MainWindowEventHandler {
             }
         }
         if(isFieldFilled){
-            isScaned = true;
+            isScanned = true;
         }
     }
 
