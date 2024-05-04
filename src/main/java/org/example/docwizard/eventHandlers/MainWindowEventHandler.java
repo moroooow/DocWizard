@@ -8,24 +8,17 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
-import org.apache.poi.hssf.usermodel.HSSFCell;
-import org.apache.poi.hssf.usermodel.HSSFRow;
-import org.apache.poi.hssf.usermodel.HSSFSheet;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.xssf.usermodel.XSSFSheet;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.xssf.usermodel.*;
 import org.apache.poi.xwpf.usermodel.*;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -108,37 +101,6 @@ public class MainWindowEventHandler {
         }
     }
 
-
-
-    private static String[][] scanExcel(HSSFWorkbook xlsx){
-        HSSFSheet sheet = xlsx.getSheetAt(0); //only first sheet will be taken(IDK how to take all sheets)
-
-        String[][] allValues = new String[sheet.getLastRowNum() - sheet.getFirstRowNum()][];
-
-        Iterator<Row> rowIter = sheet.rowIterator();
-        int index = 0;
-
-        while (rowIter.hasNext()) {
-            HSSFRow row = (HSSFRow) rowIter.next();
-            allValues[index] = scanExcelRow(row);
-            index++;
-        }
-
-        return allValues;
-    }
-
-    private static String[] scanExcelRow(HSSFRow row){
-
-        String[] cells = new String[row.getLastCellNum() - row.getFirstCellNum()];
-        int index = 0;
-        Iterator<Cell> cellIter = row.cellIterator();
-        while (cellIter.hasNext()) {
-            HSSFCell cell = (HSSFCell) cellIter.next();
-            cells[index] = cell.getStringCellValue();
-            index++;
-        }
-        return cells;
-    }
 
     private static void scanXlsxFile(XSSFWorkbook xlsx,ArrayList<String> res){
         for (int i = 0; i<xlsx.getNumberOfSheets();i++) {
