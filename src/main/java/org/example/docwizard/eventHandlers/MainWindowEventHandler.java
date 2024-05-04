@@ -13,7 +13,10 @@ import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.poi.xwpf.usermodel.*;
 
 import java.io.File;
@@ -86,6 +89,32 @@ public class MainWindowEventHandler {
                 outDoc.write(out);
             } catch (IOException ignored) {}
 
+        }
+    }
+
+    private static void scanExcelLables(XSSFWorkbook xlsx,ArrayList<String> res){
+        for (int i = 0; i<xlsx.getNumberOfSheets();i++) {
+            XSSFSheet sheet = xlsx.getSheetAt(i);
+
+            Iterator<Row> rowIter = sheet.rowIterator();
+
+            while (rowIter.hasNext()) {
+                Row row = rowIter.next();
+                Iterator<Cell> cellIter = row.cellIterator();
+
+                while (cellIter.hasNext()) {
+                    Cell cell = cellIter.next();
+                    if (cell.getCellType() == CellType.STRING) {
+                        String str = cell.getStringCellValue();
+                        Pattern p = Pattern.compile("##+[^:,.\\s\\t\\n]+");
+                        Matcher m = p.matcher(str);
+                        while (m.find()) {
+                            res.add(m.group());
+                        }
+                    }
+                }
+
+            }
         }
     }
 
@@ -198,13 +227,20 @@ public class MainWindowEventHandler {
                 scanFiles(children,collection);
                 continue;
             }
-            if(!children.getValue().getAbsolutePath().endsWith(".docx") ){
-                continue;
+            if(children.getValue().getAbsolutePath().endsWith(".docx") ){
+                try (FileInputStream fis = new FileInputStream(children.getValue().getAbsolutePath())) {
+                    XWPFDocument doc = new XWPFDocument(fis);
+                    scanFile(doc, (ArrayList<String>) collection);
+
+                } catch (IOException ignored) { }
             }
-            try (FileInputStream fis = new FileInputStream(children.getValue().getAbsolutePath())) {
-                XWPFDocument doc = new XWPFDocument(fis);
-                scanFile(doc, (ArrayList<String>) collection);
-            } catch (IOException ignored) { }
+            else if(children.getValue().getAbsolutePath().endsWith(".xlsx") ){
+                try (FileInputStream fis = new FileInputStream(children.getValue().getAbsolutePath())) {
+                    XSSFWorkbook xlsx = new XSSFWorkbook(fis);
+                    scanExcelLables(xlsx, (ArrayList<String>) collection);
+                } catch (IOException ignored) { }
+            }
+
         }
     }
     public static List<String> handleScan(TreeItem<File> rootItem) {

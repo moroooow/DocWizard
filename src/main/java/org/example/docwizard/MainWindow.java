@@ -101,7 +101,8 @@ public class MainWindow extends Application {
                         Alert alert = new Alert(Alert.AlertType.INFORMATION);
                         alert.setTitle("Информационный файл не выбран");
                         alert.setHeaderText(null);
-                        alert.setContentText("Информационный файл не выбран, проверьте.\n Нажмите ОК, чтобы продолжить работу без информационного файла.");
+                        alert.setContentText("Пожалуйста, проверьте и выберите информационный файл.\n" +
+                                "Нажмите ОК, чтобы продолжить работу без информационного файла.");
                         ButtonType buttonTypeOk = new ButtonType("ОК");
                         ButtonType buttonTypeCancel = new ButtonType("Отмена");
 
