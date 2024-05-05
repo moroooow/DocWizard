@@ -30,3 +30,72 @@
 .custom-toolbar .button .graphic {
     -fx-fill: #ffffff;
 }
+
+.split-pane {
+    -fx-background-color: #e3e3e3;
+}
+
+.split-pane .split-pane-divider {
+    -fx-background-color: #dddddd;
+}
+
+.split-pane .split-pane-divider:hover {
+    -fx-background-color: #aaaaaa;
+}
+
+.split-pane .split-pane-divider:vertical {
+    -fx-background-insets: 0;
+    -fx-background-color: #dddddd;
+}
+
+.split-pane .split-pane-divider:vertical:hover {
+    -fx-background-color: #aaaaaa;
+}
+
+.split-pane .split-pane-divider:horizontal {
+    -fx-padding: 0 5;
+    -fx-background-insets: 0;
+    -fx-background-color: #dddddd;
+}
+
+.split-pane .split-pane-divider:horizontal:hover {
+    -fx-background-color: #aaaaaa;
+}
+.tree-view {
+    -fx-background-color: #fff;
+}
+.tree-cell {
+    -fx-background-color: transparent;
+}
+
+.tree-cell:filled:selected {
+    -fx-background-color: #8792a8;
+}
+
+.tree-cell:filled:selected:focused {
+    -fx-background-color: #8792a8;
+}
+
+.tree-cell:filled:hover {
+    -fx-background-color: #eaf2ff;
+}
+
+.tree-cell .tree-disclosure-node {
+    -fx-background-color: transparent;
+}
+
+.tree-cell .tree-disclosure-node > .arrow {
+    -fx-background-color: #000;
+}
+
+.tree-cell .tree-disclosure-node > .arrow:hover {
+    -fx-background-color: #000;
+}
+
+.tree-cell .label {
+    -fx-padding: 2 5;
+}
+
+.tree-cell .label:hover {
+    -fx-background-color: transparent;
+}

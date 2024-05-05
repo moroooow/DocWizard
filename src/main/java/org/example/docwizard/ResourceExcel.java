@@ -11,21 +11,14 @@ import java.util.HashMap;
 import java.util.Iterator;
 
 public class ResourceExcel {
-
-    private static HashMap<String, Integer> markingColumns = new HashMap<String, Integer>();
-
+    private static HashMap<String, Integer> markingColumns = new HashMap<>();
     private static String[][] excelData;
-
     public ResourceExcel(XSSFWorkbook xlsx){
-
         scanResourceExcel(xlsx);
         markData();
     }
-
     private static void markData(){
-
         for (int i = 0; i < excelData.length; i++){
-
             markingColumns.put(excelData[0][i], i);
         }
     }
@@ -41,7 +34,6 @@ public class ResourceExcel {
             index++;
         }
     }
-
     private static String[] scanExcelRow(XSSFRow row){
 
         String[] cells = new String[row.getLastCellNum() - row.getFirstCellNum()];

@@ -2,6 +2,7 @@ package org.example.docwizard;
 
 import java.io.File;
 
+@Deprecated
 public class DirectoryListing {
     private File[] files;
 

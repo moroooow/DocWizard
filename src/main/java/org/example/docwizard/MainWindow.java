@@ -25,7 +25,6 @@ import java.util.Optional;
 
 public class MainWindow extends Application {
      private ArrayList<String> needToSwap = new ArrayList<>();
-     private final ArrayList<String> wordToSwap = new ArrayList<>();
      private File selectedDir;
      private TreeItem<File> rootItem;
      public final double minScreenWidth = 842.0;
@@ -67,6 +66,7 @@ public class MainWindow extends Application {
         SplitPane mainPane = new SplitPane();
         HBox hbox = new HBox();
         mainPane.setDividerPosition(0,0.2);
+        mainPane.setVisible(false);
 
         chooseButton.setOnAction(event -> {
             selectedDir = getInputDir(inputDirChooser, stage);
@@ -74,9 +74,13 @@ public class MainWindow extends Application {
                 rootItem = new TreeItem<>(selectedDir.getAbsoluteFile());
                 addFilesAndSubdirectories(selectedDir, rootItem);
                 treeView.setRoot(rootItem);
+                treeView.setStyle("-fx-font-family: 'Century Gothic'; -fx-font-size: 12px;");
                 MainWindowEventHandler.resetIsScanned();
+                dataExcelFile = null;
+                mainPane.setVisible(true);
             }
         });
+
         setHoverHintMessage(hintField, chooseButton, "Открыть папку с файлами");
         Button scanButton = new Button("Scan");
 
@@ -115,17 +119,16 @@ public class MainWindow extends Application {
 
                     }
                     needToSwap = (ArrayList<String>) MainWindowEventHandler.handleScan(treeView.getRoot());
-                    MainWindowEventHandler.handleSwap(hbox,needToSwap, wordToSwap);
+                    MainWindowEventHandler.handleSwap(hbox,needToSwap);
                 }
         );
         setHoverHintMessage(hintField, scanButton, "Найти все заполняемые поля в документах в текущей папке");
 
-        createButton.setOnAction(event -> MainWindowEventHandler.handleCreate(rootItem,dataExcelFile, outputDirChooser, stage, needToSwap, wordToSwap));
+        createButton.setOnAction(event -> MainWindowEventHandler.handleCreate(rootItem,dataExcelFile, outputDirChooser, stage, needToSwap));
         Scene scene = new Scene(vbox,minScreenWidth , minScreenHeight);
         scene.getStylesheets().add("/style.css");
 
         setHoverHintMessage(hintField, createButton, "Сохранить все измененные поля и создать новый файл на их основе");
-
 
         // set the scene
         stage.setScene(scene);
@@ -161,12 +164,12 @@ public class MainWindow extends Application {
 
     public static ContextMenu configureContextMenu(TreeItem<File> selectedItem){
         ContextMenu contextMenu = new ContextMenu();
+        contextMenu.setStyle("-fx-font-family: 'Century Gothic'; -fx-font-size: 12px;");
         MenuItem openInExplorerItem = new MenuItem("Открыть в проводнике");
         openInExplorerItem.setOnAction(event -> {
             try{
                 Desktop.getDesktop().open(new File(selectedItem.getValue().getParent()));
-            } catch(IOException ignored){
-            }
+            } catch(IOException ignored) { }
         });
 
         MenuItem deleteItem = new MenuItem("Исключить файл из проекта");

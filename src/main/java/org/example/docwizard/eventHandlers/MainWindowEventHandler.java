@@ -24,6 +24,7 @@ import java.util.regex.Pattern;
 
 public class MainWindowEventHandler {
     private static boolean isScanned = false;
+    private static List<String> wordToSwap;
     private static final GridPane root = new GridPane();
     public static void resetIsScanned(){
         isScanned = false;
@@ -49,7 +50,7 @@ public class MainWindowEventHandler {
         }
     }
 
-    public static void handleCreate (TreeItem<File> files, File dataExcelFile, DirectoryChooser outputDirChooser, Stage stage, List<String> needToSwap, List<String> wordToSwap){
+    public static void handleCreate (TreeItem<File> files, File dataExcelFile, DirectoryChooser outputDirChooser, Stage stage, List<String> needToSwap){
 
         if (files.getChildren().isEmpty()) {
             return;
@@ -119,7 +120,6 @@ public class MainWindowEventHandler {
                         findingMatches(str, res);
                     }
                 }
-
             }
         }
     }
@@ -167,15 +167,10 @@ public class MainWindowEventHandler {
                     if (cell.getCellType() == CellType.STRING) {
 
                         for(int j = 0; j < originalText.size();j++) {
-                            String str = cell.getStringCellValue();
-                            Pattern p = Pattern.compile(originalText.get(j));
-                            Matcher m = p.matcher(str);
-                            if (m.find()) {
-                                cell.setCellValue(str.replaceAll(originalText.get(j),updatedText.get(j)));
-                            }
+                            StringBuilder str = new StringBuilder(cell.getStringCellValue());
+                            replaceAll(str, originalText.get(j),updatedText.get(j));
+                            cell.setCellValue(str.toString());
                         }
-
-
                     }
                 }
             }
@@ -250,7 +245,7 @@ public class MainWindowEventHandler {
                 try (FileInputStream fis = new FileInputStream(children.getValue().getAbsolutePath())) {
 
                     XSSFWorkbook xlsx = new XSSFWorkbook(fis);
-                    scanXlsxFile(xlsx, (ArrayList<String>) collection);
+                     scanXlsxFile(xlsx, (ArrayList<String>) collection);
                 } catch (IOException ignored) { }
             }
 
@@ -273,14 +268,14 @@ public class MainWindowEventHandler {
         }
         return null;
     }
-    public static void handleSwap(HBox hbox, List<String> needToSwap, List<String> wordToSwap) {
+    public static void handleSwap(HBox hbox, List<String> needToSwap) {
         root.getChildren().clear();
-        renderFields(needToSwap, wordToSwap);
+        renderFields(needToSwap);
         hbox.getChildren().clear();
         hbox.getChildren().add(root);
     }
 
-    private static void renderFields(List<String> needToSwap, List<String> wordToSwap){
+    private static void renderFields(List<String> needToSwap){
         root.setHgap(8);
         root.setVgap(8);
         root.setPadding(new Insets(5));
@@ -291,26 +286,31 @@ public class MainWindowEventHandler {
             root.addRow(i, new Label(needToSwap.get(i)), new TextField());
         }
 
-        submit.setOnAction(e -> validateAndSaveData(wordToSwap));
+        submit.setOnAction(e -> wordToSwap = validateAndSaveData());
         if(!root.getChildren().isEmpty()) {
             root.addRow(needToSwap.size(), submit);
         }
     }
 
-    private static void validateAndSaveData(List<String> wordToSwap){
+    private static List<String> validateAndSaveData(){
         boolean isFieldFilled = true;
+        List<String> temp = new ArrayList<>();
         for (Node ob : root.getChildren()) {
             if (ob instanceof TextField) {
                 if(((TextField) ob).getText().isEmpty()) {
                     ((TextField) ob).setPromptText("Поле не заполнено");
                     isFieldFilled = false;
                 } else {
-                    wordToSwap.add(((TextField) ob).getText());
+                    temp.add(((TextField) ob).getText());
                 }
             }
         }
         if(isFieldFilled){
             isScanned = true;
+            return temp;
+        } else {
+            isScanned = false;
+            return null;
         }
     }
 
