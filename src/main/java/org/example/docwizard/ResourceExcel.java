@@ -1,7 +1,6 @@
 package org.example.docwizard;
 
 import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
@@ -12,37 +11,28 @@ import java.util.Iterator;
 
 public class ResourceExcel {
 
-    private static HashMap<String, Integer> markingColumns = new HashMap<String, Integer>();
+    private static HashMap<String, String> infInRow = new HashMap<String, String>();
 
-    private static String[][] excelData;
+    public ResourceExcel(XSSFWorkbook xlsx, int numberOfRow){
 
-    public ResourceExcel(XSSFWorkbook xlsx){
-
-        scanResourceExcel(xlsx);
-        markData();
+        markData(xlsx, numberOfRow);
     }
 
-    private static void markData(){
+    private static void markData(XSSFWorkbook xlsx, int numberOfRow){
 
-        for (int i = 0; i < excelData.length; i++){
+        String[] tableTitles = scanExcelRow(xlsx, 0);
+        String[] rowData = scanExcelRow(xlsx, numberOfRow);
 
-            markingColumns.put(excelData[0][i], i);
-        }
-    }
-    private static void scanResourceExcel(XSSFWorkbook xlsx){
-        XSSFSheet sheet = xlsx.getSheetAt(0); //only first sheet will be taken(IDK how to take all sheets)
+        for (int i = 0; i < tableTitles.length; i++){
 
-        Iterator<Row> rowIter = sheet.rowIterator();
-        int index = 0;
-
-        while (rowIter.hasNext()) {
-            XSSFRow row = (XSSFRow) rowIter.next();
-            excelData[index] = scanExcelRow(row);
-            index++;
+            infInRow.put(tableTitles[i], rowData[i]);
         }
     }
 
-    private static String[] scanExcelRow(XSSFRow row){
+    private static String[] scanExcelRow(XSSFWorkbook xlsx, int numberOfRow){
+
+        XSSFSheet sheet = xlsx.getSheetAt(0);
+        XSSFRow row = sheet.getRow(numberOfRow);
 
         String[] cells = new String[row.getLastCellNum() - row.getFirstCellNum()];
         int index = 0;
@@ -55,11 +45,7 @@ public class ResourceExcel {
         return cells;
     }
 
-    public static String[][] getExcelData(){
-        return excelData;
-    }
-
-    public static HashMap<String, Integer> getMarkingColumns(){
-        return markingColumns;
+    public static HashMap<String, String> getMarkingColumns(){
+        return infInRow;
     }
 }
