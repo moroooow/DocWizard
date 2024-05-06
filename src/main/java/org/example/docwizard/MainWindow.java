@@ -25,7 +25,6 @@ import java.util.Optional;
 
 public class MainWindow extends Application {
      private ArrayList<String> needToSwap = new ArrayList<>();
-     private File selectedDir;
      private TreeItem<File> rootItem;
      public final double minScreenWidth = 842.0;
      public final double minScreenHeight = 592.0;
@@ -56,8 +55,7 @@ public class MainWindow extends Application {
             }
         });
 
-        TextField hintField = new TextField(
-                "Наведите кусор на кнопку, чтобы увидеть подсказку");
+        TextField hintField = new TextField("Наведите кусор на кнопку, чтобы увидеть подсказку");
         hintField.setEditable(false);
 
 
@@ -69,7 +67,7 @@ public class MainWindow extends Application {
         mainPane.setVisible(false);
 
         chooseButton.setOnAction(event -> {
-            selectedDir = getInputDir(inputDirChooser, stage);
+            File selectedDir = getInputDir(inputDirChooser, stage);
             if(selectedDir != null && selectedDir.canRead() && selectedDir.canWrite()){
                 rootItem = new TreeItem<>(selectedDir.getAbsoluteFile());
                 addFilesAndSubdirectories(selectedDir, rootItem);

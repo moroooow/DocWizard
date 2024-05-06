@@ -1,5 +1,7 @@
-.custom-root {
+.root {
     -fx-background-color: #fff;
+    -fx-font-family: 'Century Gothic';
+    -fx-font-size: 12px;
 }
 
 .custom-toolbar {
