@@ -8,21 +8,17 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
-import org.apache.poi.hssf.usermodel.HSSFCell;
-import org.apache.poi.hssf.usermodel.HSSFRow;
-import org.apache.poi.hssf.usermodel.HSSFSheet;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.xssf.usermodel.*;
 import org.apache.poi.xwpf.usermodel.*;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -34,26 +30,26 @@ public class MainWindowEventHandler {
         root.getChildren().clear();
     }
 
-    private static List<File> getDocxFiles(TreeItem<File> root){
+    private static List<File> getDocxAndXlsxFiles(TreeItem<File> root){
         List<File> res = new ArrayList<>();
-        getDocxFile(root,res);
+        getDocxAndXlsxFiles(root,res);
         return res;
     }
 
-    private static void getDocxFile(TreeItem<File> root,List<File> res){
+    private static void getDocxAndXlsxFiles(TreeItem<File> root,List<File> res){
         for(TreeItem<File> file : root.getChildren()){
             if(file.getValue().isDirectory()){
-                getDocxFile(file,res);
+                getDocxAndXlsxFiles(file,res);
                 continue;
             }
 
-            if(file.getValue().getName().endsWith(".docx")){
+            if(file.getValue().getName().endsWith(".docx") || file.getValue().getName().endsWith(".xlsx")){
                 res.add(file.getValue());
             }
         }
     }
 
-    public static void handleCreate (TreeItem<File> files, DirectoryChooser outputDirChooser, Stage stage, List<String> needToSwap, List<String> wordToSwap){
+    public static void handleCreate (TreeItem<File> files, File dataExcelFile, DirectoryChooser outputDirChooser, Stage stage, List<String> needToSwap, List<String> wordToSwap){
 
         if (files.getChildren().isEmpty()) {
             return;
@@ -74,65 +70,77 @@ public class MainWindowEventHandler {
             return;
         }
 
-        for (File file : getDocxFiles(files)) {
 
-            try (FileOutputStream out = new FileOutputStream(dir.getAbsolutePath() + "\\"
-                    + "new_" + file.getName());
-                 FileInputStream in = new FileInputStream(file.getAbsolutePath());
-                 XWPFDocument inDoc = new XWPFDocument(in)) {
+        for (File file : getDocxAndXlsxFiles(files)) {
+            if (file != dataExcelFile) {
+                if (file.getAbsolutePath().endsWith(".docx")) {
+                    try (FileOutputStream out = new FileOutputStream(dir.getAbsolutePath() + "\\"
+                            + "new_" + file.getName());
+                         FileInputStream in = new FileInputStream(file.getAbsolutePath());
+                         XWPFDocument inDoc = new XWPFDocument(in)) {
 
-                XWPFDocument outDoc = replaceText(inDoc,needToSwap,wordToSwap);
+                        XWPFDocument outDoc = replaceTextInDocx(inDoc, needToSwap, wordToSwap);
+                        outDoc.write(out);
 
-                outDoc.write(out);
-            } catch (IOException ignored) {}
+                    } catch (IOException ignored) {
+                    }
+                } else if (file.getAbsolutePath().endsWith(".xlsx")) {
+                    try (FileOutputStream out = new FileOutputStream(dir.getAbsolutePath() + "\\"
+                            + "new_" + file.getName());
+                         FileInputStream in = new FileInputStream(file.getAbsolutePath());
+                         XSSFWorkbook inXlsx = new XSSFWorkbook(in)
+                    ) {
 
+                        XSSFWorkbook outXlsx = replaceTextInExcel(inXlsx, needToSwap, wordToSwap);
+                        outXlsx.write(out);
+
+                    } catch (IOException ignored) {
+                    }
+                }
+            }
         }
     }
 
-    private static String[][] scanExcel(HSSFWorkbook xlsx){
-        HSSFSheet sheet = xlsx.getSheetAt(0); //only first sheet will be taken(IDK how to take all sheets)
 
-        String[][] allValues = new String[sheet.getLastRowNum() - sheet.getFirstRowNum()][];
+    private static void scanXlsxFile(XSSFWorkbook xlsx,ArrayList<String> res){
+        for (int i = 0; i<xlsx.getNumberOfSheets();i++) {
+            XSSFSheet sheet = xlsx.getSheetAt(i);
 
-        Iterator<Row> rowIter = sheet.rowIterator();
-        int index = 0;
+            Iterator<Row> rowIter = sheet.rowIterator();
 
-        while (rowIter.hasNext()) {
-            HSSFRow row = (HSSFRow) rowIter.next();
-            allValues[index] = scanExcelRow(row);
-            index++;
+            while (rowIter.hasNext()) {
+                Row row = rowIter.next();
+                Iterator<Cell> cellIter = row.cellIterator();
+
+                while (cellIter.hasNext()) {
+                    Cell cell = cellIter.next();
+                    if (cell.getCellType() == CellType.STRING) {
+                        String str = cell.getStringCellValue();
+                        findingMatches(str, res);
+                    }
+                }
+
+            }
         }
-
-        return allValues;
     }
 
-    private static String[] scanExcelRow(HSSFRow row){
-
-        String[] cells = new String[row.getLastCellNum() - row.getFirstCellNum()];
-        int index = 0;
-        Iterator<Cell> cellIter = row.cellIterator();
-        while (cellIter.hasNext()) {
-            HSSFCell cell = (HSSFCell) cellIter.next();
-            cells[index] = cell.getStringCellValue();
-            index++;
-        }
-        return cells;
-    }
-    private static void scanFile(XWPFDocument doc, ArrayList<String> res) {
+    private static void scanDocxFile(XWPFDocument doc, ArrayList<String> res) {
         List<XWPFParagraph> paragraphs = doc.getParagraphs();
         for (XWPFParagraph par : paragraphs) {
             String str = par.getText();
-            Pattern p = Pattern.compile("##+[^:,.\\s\\t\\n]+");
-            Matcher m = p.matcher(str);
-            while (m.find()) {
-                int start = m.start();
-                int end = m.end();
-                res.add(str.substring(start, end));
-            }
+            findingMatches(str, res);
         }
-
     }
-    private static XWPFDocument replaceText(XWPFDocument doc, List<String> originalText, List<String> updatedText) {
+
+    private static void findingMatches(String str, ArrayList<String> res){
+        Pattern p = Pattern.compile("##+[^:,.\\s\\t\\n]+");
+        Matcher m = p.matcher(str);
+        while (m.find()) {
+            res.add(m.group());
+        }
+    }
+
+    private static XWPFDocument replaceTextInDocx(XWPFDocument doc, List<String> originalText, List<String> updatedText) {
         replaceTextInParagraphs(doc.getParagraphs(), originalText, updatedText);
         for (XWPFTable tbl : doc.getTables()) {
             for (XWPFTableRow row : tbl.getRows()) {
@@ -143,6 +151,39 @@ public class MainWindowEventHandler {
         }
         return doc;
     }
+
+    public static XSSFWorkbook replaceTextInExcel(XSSFWorkbook xlsx,List<String> originalText, List<String> updatedText) {
+        for (int i = 0; i<xlsx.getNumberOfSheets();i++) {
+            XSSFSheet sheet = xlsx.getSheetAt(i);
+
+            Iterator<Row> rowIter = sheet.rowIterator();
+
+            while (rowIter.hasNext()) {
+                Row row = rowIter.next();
+                Iterator<Cell> cellIter = row.cellIterator();
+
+                while (cellIter.hasNext()) {
+                    Cell cell = cellIter.next();
+                    if (cell.getCellType() == CellType.STRING) {
+
+                        for(int j = 0; j < originalText.size();j++) {
+                            String str = cell.getStringCellValue();
+                            Pattern p = Pattern.compile(originalText.get(j));
+                            Matcher m = p.matcher(str);
+                            if (m.find()) {
+                                cell.setCellValue(str.replaceAll(originalText.get(j),updatedText.get(j)));
+                            }
+                        }
+
+
+                    }
+                }
+            }
+        }
+        return  xlsx;
+    }
+
+
     private static void replaceTextInParagraphs(List<XWPFParagraph> paragraphs, List<String> originalText, List<String> updatedText) {
         paragraphs.forEach(paragraph -> replaceTextInParagraph(paragraph, originalText, updatedText));
     }
@@ -198,13 +239,21 @@ public class MainWindowEventHandler {
                 scanFiles(children,collection);
                 continue;
             }
-            if(!children.getValue().getAbsolutePath().endsWith(".docx") ){
-                continue;
+            if(children.getValue().getAbsolutePath().endsWith(".docx") ){
+                try (FileInputStream fis = new FileInputStream(children.getValue().getAbsolutePath())) {
+
+                    XWPFDocument doc = new XWPFDocument(fis);
+                    scanDocxFile(doc, (ArrayList<String>) collection);
+                } catch (IOException ignored) { }
             }
-            try (FileInputStream fis = new FileInputStream(children.getValue().getAbsolutePath())) {
-                XWPFDocument doc = new XWPFDocument(fis);
-                scanFile(doc, (ArrayList<String>) collection);
-            } catch (IOException ignored) { }
+            else if(children.getValue().getAbsolutePath().endsWith(".xlsx") ){
+                try (FileInputStream fis = new FileInputStream(children.getValue().getAbsolutePath())) {
+
+                    XSSFWorkbook xlsx = new XSSFWorkbook(fis);
+                    scanXlsxFile(xlsx, (ArrayList<String>) collection);
+                } catch (IOException ignored) { }
+            }
+
         }
     }
     public static List<String> handleScan(TreeItem<File> rootItem) {

@@ -101,7 +101,8 @@ public class MainWindow extends Application {
                         Alert alert = new Alert(Alert.AlertType.INFORMATION);
                         alert.setTitle("Информационный файл не выбран");
                         alert.setHeaderText(null);
-                        alert.setContentText("Информационный файл не выбран, проверьте.\n Нажмите ОК, чтобы продолжить работу без информационного файла.");
+                        alert.setContentText("Пожалуйста, проверьте и выберите информационный файл.\n" +
+                                "Нажмите ОК, чтобы продолжить работу без информационного файла.");
                         ButtonType buttonTypeOk = new ButtonType("ОК");
                         ButtonType buttonTypeCancel = new ButtonType("Отмена");
 
@@ -119,7 +120,7 @@ public class MainWindow extends Application {
         );
         setHoverHintMessage(hintField, scanButton, "Найти все заполняемые поля в документах в текущей папке");
 
-        createButton.setOnAction(event -> MainWindowEventHandler.handleCreate(rootItem, outputDirChooser, stage, needToSwap, wordToSwap));
+        createButton.setOnAction(event -> MainWindowEventHandler.handleCreate(rootItem,dataExcelFile, outputDirChooser, stage, needToSwap, wordToSwap));
         Scene scene = new Scene(vbox,minScreenWidth , minScreenHeight);
         scene.getStylesheets().add("/style.css");
 
