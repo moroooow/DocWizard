@@ -39,7 +39,6 @@ public class MainWindow extends Application {
         // create a File chooser
         DirectoryChooser inputDirChooser = new DirectoryChooser();
         inputDirChooser.setTitle("Выберите папку: ");
-
         DirectoryChooser outputDirChooser = new DirectoryChooser();
 
         TreeView<File> treeView = new TreeView<>();

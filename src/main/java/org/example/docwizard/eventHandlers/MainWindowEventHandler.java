@@ -13,6 +13,7 @@ import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.*;
 import org.apache.poi.xwpf.usermodel.*;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.*;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -189,8 +190,15 @@ public class MainWindowEventHandler {
             if (!paragraphText.toString().contains(originalText.get(i))) {
                 continue;
             }
+            boolean flagHref = false;
+            String hrefText = "<a href=\"" + updatedText.get(i) + "\">" + updatedText.get(i) + "</a>";
 
-            replaceAll(paragraphText,originalText.get(i), updatedText.get(i));
+            if(updatedText.get(i).contains("//")){
+                replaceAll(paragraphText, originalText.get(i),hrefText);
+                flagHref = true;
+            } else {
+                replaceAll(paragraphText,originalText.get(i), updatedText.get(i));
+            }
 
             while (!paragraph.getRuns().isEmpty()) {
                 paragraph.removeRun(0);
@@ -214,8 +222,20 @@ public class MainWindowEventHandler {
                 newRun.setText(paragraphText.toString());
             }
 
-        }
+            if(flagHref){
+                String[] splitedHyperLinks = paragraphText.toString().split(hrefText);
 
+                for(int j = 0;  j < splitedHyperLinks.length; j++){
+                    XWPFHyperlinkRun hyperlinkRun = paragraph.createHyperlinkRun(hrefText);
+                    hyperlinkRun.setText(updatedText.get(i));
+                    hyperlinkRun.setColor("0000FF");
+                    hyperlinkRun.setUnderline(UnderlinePatterns.SINGLE);
+                    paragraph.addRun(hyperlinkRun);
+                }
+
+            }
+
+        }
     }
     private static void replaceAll(StringBuilder sb, String find, String replace){
         Pattern p = Pattern.compile(find);
