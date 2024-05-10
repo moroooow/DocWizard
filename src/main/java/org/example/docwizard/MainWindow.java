@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 
 public class MainWindow extends Application {
      private ArrayList<String> needToSwap = new ArrayList<>();
@@ -29,6 +30,7 @@ public class MainWindow extends Application {
      public final double minScreenWidth = 842.0;
      public final double minScreenHeight = 592.0;
      private static File dataExcelFile;
+     private FileScanner fileScanner;
 
     @Override
     public void start(Stage stage) {
@@ -70,8 +72,8 @@ public class MainWindow extends Application {
             if(selectedDir != null && selectedDir.canRead() && selectedDir.canWrite()){
                 rootItem = new TreeItem<>(selectedDir.getAbsoluteFile());
                 addFilesAndSubdirectories(selectedDir, rootItem);
+                fileScanner = new FileScanner(rootItem);
                 treeView.setRoot(rootItem);
-                treeView.setStyle("-fx-font-family: 'Century Gothic'; -fx-font-size: 12px;");
                 MainWindowEventHandler.resetIsScanned();
                 dataExcelFile = null;
                 mainPane.setVisible(true);
@@ -113,15 +115,18 @@ public class MainWindow extends Application {
                         if(res.isPresent() && res.get() == buttonTypeCancel){
                             return;
                         }
-
                     }
-                    needToSwap = (ArrayList<String>) MainWindowEventHandler.handleScan(treeView.getRoot());
-                    MainWindowEventHandler.handleSwap(hbox,needToSwap);
-                }
-        );
+            try {
+                needToSwap = (ArrayList<String>) fileScanner.handleScan();
+            } catch (Exception e){
+                System.out.println(e);
+            }
+            MainWindowEventHandler.handleSwap(hbox,needToSwap);
+        });
+
         setHoverHintMessage(hintField, scanButton, "Найти все заполняемые поля в документах в текущей папке");
 
-        createButton.setOnAction(event -> MainWindowEventHandler.handleCreate(rootItem,dataExcelFile, outputDirChooser, stage, needToSwap));
+        createButton.setOnAction(event -> MainWindowEventHandler.handleCreate(fileScanner,dataExcelFile, outputDirChooser, stage, needToSwap));
         Scene scene = new Scene(vbox,minScreenWidth , minScreenHeight);
         scene.getStylesheets().add("/style.css");
 
