@@ -21,12 +21,17 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
 public class FileScanner {
     private final TreeItem<File> root;
+    private static final Lock lock = new ReentrantLock();
 
     public FileScanner(TreeItem<File> root) {
         this.root = root;
@@ -63,27 +68,46 @@ public class FileScanner {
         }
     }
 
-    private void scanFiles(TreeItem<File> directory, List<String> collection, ObservableAtomicInteger processFiles) {
+    private void scanFiles(TreeItem<File> directory, List<String> collection, ObservableAtomicInteger processFiles, CountDownLatch latch) {
         for (TreeItem<File> children : directory.getChildren()) {
             processFiles.incrementAndGet();
             if (children.getValue().isDirectory()) {
-                scanFiles(children, collection, processFiles);
+                scanFiles(children, collection, processFiles, latch);
+                latch.countDown();
                 continue;
             }
             if (children.getValue().getAbsolutePath().endsWith(".docx")) {
-                try (FileInputStream fis = new FileInputStream(children.getValue().getAbsolutePath())) {
+                Task<Void> task = new Task<>() {
+                    @Override
+                    protected Void call() {
+                        try (FileInputStream fis = new FileInputStream(children.getValue().getAbsolutePath())) {
+                            XWPFDocument doc = new XWPFDocument(fis);
+                            scanDocxFile(doc, (ArrayList<String>) collection);
+                        } catch (IOException ignored) {
+                        }
+                        finally {
+                            latch.countDown();
+                        }
+                        return null;
+                    }
+                };
 
-                    XWPFDocument doc = new XWPFDocument(fis);
-                    scanDocxFile(doc, (ArrayList<String>) collection);
-                } catch (IOException ignored) {
-                }
+                new Thread(task).start();
             } else if (children.getValue().getAbsolutePath().endsWith(".xlsx")) {
-                try (FileInputStream fis = new FileInputStream(children.getValue().getAbsolutePath())) {
-
-                    XSSFWorkbook xlsx = new XSSFWorkbook(fis);
-                    scanXlsxFile(xlsx, (ArrayList<String>) collection);
-                } catch (IOException ignored) {
-                }
+                Task<Void> task = new Task<>() {
+                    @Override
+                    protected Void call() {
+                        try (FileInputStream fis = new FileInputStream(children.getValue().getAbsolutePath())) {
+                            XSSFWorkbook xlsx = new XSSFWorkbook(fis);
+                            scanXlsxFile(xlsx, (ArrayList<String>) collection);
+                        } catch (IOException ignored) {}
+                        finally {
+                        latch.countDown();
+                        }
+                        return null;
+                    }
+                };
+                new Thread(task).start();
             }
         }
     }
@@ -125,6 +149,7 @@ public class FileScanner {
         Thread thread = new Thread(task);
         thread.start();
 
+
         return task.get();
     }
 
@@ -143,13 +168,18 @@ public class FileScanner {
                 };
 
                 int totalFileCount = getTotalFileCount(root);
+                CountDownLatch latch = new CountDownLatch(getTotalFileCount(root) - 10);
 
                 processedFiles.addChangeListener((oldValue, newValue) -> {
                     updateProgress(newValue, totalFileCount);
                 });
 
-                scanFiles(root, res, processedFiles);
-
+                scanFiles(root, res, processedFiles,latch);
+                try {
+                    latch.await();
+                } catch (InterruptedException e) {
+                    return res;
+                }
                 return res;
             }
         };
@@ -190,8 +220,14 @@ public class FileScanner {
     private static void findingMatches(String str, ArrayList<String> res) {
         Pattern p = Pattern.compile("##+[^:,.\\s\\t\\n]+");
         Matcher m = p.matcher(str);
-        while (m.find()) {
-            res.add(m.group());
+        lock.lock();
+        try {
+            while (m.find()) {
+
+                res.add(m.group());
+            }
+        } finally {
+            lock.unlock();
         }
     }
 
