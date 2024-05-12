@@ -118,11 +118,10 @@ public class MainWindow extends Application {
                         }
                     }
             try {
-                needToSwap = (ArrayList<String>) fileScanner.handleScan();
+                fileScanner.handleScan(hbox);
             } catch (Exception e){
                 System.out.println(e);
             }
-            MainWindowEventHandler.handleSwap(hbox,needToSwap);
         });
 
         setHoverHintMessage(hintField, scanButton, "Найти все заполняемые поля в документах в текущей папке");
