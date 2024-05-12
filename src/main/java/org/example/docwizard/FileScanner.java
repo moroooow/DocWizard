@@ -5,6 +5,7 @@ import javafx.concurrent.Task;
 import javafx.scene.Scene;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TreeItem;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.apache.poi.ss.usermodel.Cell;
@@ -14,6 +15,7 @@ import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
+import org.example.docwizard.eventHandlers.MainWindowEventHandler;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -22,7 +24,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -109,6 +111,7 @@ public class FileScanner {
                 };
                 new Thread(task).start();
             }
+
         }
     }
 
@@ -124,7 +127,7 @@ public class FileScanner {
         return count;
     }
 
-    public List<String> handleScan() throws ExecutionException, InterruptedException {
+    public Void handleScan(HBox hbox) {
         if (root == null) {
             return null;
         }
@@ -141,22 +144,26 @@ public class FileScanner {
         stage.show();
 
         ObservableAtomicInteger processedFiles = new ObservableAtomicInteger(0);
+        int totalFileCount = getTotalFileCount(root);
 
-        Task<List<String>> task = getListTask(stage, processedFiles);
+        Task<Void> task = getListTask(hbox, processedFiles, totalFileCount - 1);
+
+        task.setOnSucceeded(event -> {
+            Platform.runLater(stage::close);
+        });
 
         progressBar.progressProperty().bind(task.progressProperty());
 
         Thread thread = new Thread(task);
         thread.start();
 
-
-        return task.get();
+        return null;
     }
 
-    private Task<List<String>> getListTask(Stage stage, ObservableAtomicInteger processedFiles) {
-        Task<List<String>> task = new Task<>() {
+    private Task<Void> getListTask( HBox hbox, ObservableAtomicInteger processedFiles, int totalFileCount) {
+        Task<Void> task = new Task<>() {
             @Override
-            protected List<String> call() {
+            protected Void call() throws InterruptedException {
                 ArrayList<String> res = new ArrayList<>() {
                     @Override
                     public boolean add(String s) {
@@ -167,7 +174,7 @@ public class FileScanner {
                     }
                 };
 
-                int totalFileCount = getTotalFileCount(root);
+
                 CountDownLatch latch = new CountDownLatch(getTotalFileCount(root) - 10);
 
                 processedFiles.addChangeListener((oldValue, newValue) -> {
@@ -178,13 +185,16 @@ public class FileScanner {
                 try {
                     latch.await();
                 } catch (InterruptedException e) {
-                    return res;
+                    return null;
                 }
-                return res;
+
+                Platform.runLater(() -> MainWindowEventHandler.handleSwap(hbox, res));
+
+                return null;
             }
         };
 
-        task.setOnSucceeded(event -> Platform.runLater(stage::close));
+
         return task;
     }
 

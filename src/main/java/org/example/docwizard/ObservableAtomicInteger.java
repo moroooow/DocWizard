@@ -46,6 +46,6 @@ public class ObservableAtomicInteger {
     }
 
     public interface ChangeListener {
-        void noise(int oldValue, int newValue);
+        void noise(int oldValue, int newValue) ;
     }
 }
