@@ -15,14 +15,15 @@ import javafx.stage.Stage;
 
 import java.awt.*;
 
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.example.docwizard.eventHandlers.MainWindowEventHandler;
 
 import javafx.scene.control.TextField;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 
 public class MainWindow extends Application {
      private ArrayList<String> needToSwap = new ArrayList<>();
@@ -184,7 +185,20 @@ public class MainWindow extends Application {
         });
 
         MenuItem setDataExcelFile = new MenuItem("Установить файл информационным");
-        setDataExcelFile.setOnAction(actionEvent -> dataExcelFile = selectedItem.getValue());
+        setDataExcelFile.setOnAction(actionEvent -> {
+            dataExcelFile = selectedItem.getValue();
+             if (dataExcelFile.getAbsolutePath().endsWith(".xlsx")) {
+                try (
+                        FileInputStream in = new FileInputStream(dataExcelFile.getAbsolutePath());
+                        XSSFWorkbook inXlsx = new XSSFWorkbook(in))
+                {
+                    //numberOfRowData are numbered from 0
+                    int numberOfRowData = 9;
+                    ResourceExcel.markData(inXlsx, 5,numberOfRowData);
+                } catch (IOException ignored) {
+                }
+             }
+        });
 
         contextMenu.getItems().addAll(openInExplorerItem, deleteItem);
         if(selectedItem.getValue().getName().endsWith(".xlsx")){

@@ -109,6 +109,9 @@ public class FileScanner {
                 };
                 new Thread(task).start();
             }
+            else{
+                latch.countDown();
+            }
         }
     }
 
@@ -168,7 +171,7 @@ public class FileScanner {
                 };
 
                 int totalFileCount = getTotalFileCount(root);
-                CountDownLatch latch = new CountDownLatch(getTotalFileCount(root) - 10);
+                CountDownLatch latch = new CountDownLatch(getTotalFileCount(root) - 1);
 
                 processedFiles.addChangeListener((oldValue, newValue) -> {
                     updateProgress(newValue, totalFileCount);
@@ -223,7 +226,6 @@ public class FileScanner {
         lock.lock();
         try {
             while (m.find()) {
-
                 res.add(m.group());
             }
         } finally {
