@@ -1,11 +1,13 @@
 package org.example.docwizard.eventHandlers;
 
 
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.text.Text;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 import org.apache.poi.ss.usermodel.Cell;
@@ -206,7 +208,24 @@ public class MainWindowEventHandler {
         Button submit = new Button("Подтвердить");
 
         for (int i = 0; i < needToSwap.size(); i++) {
-            root.addRow(i, new Label(needToSwap.get(i)), new TextField());
+            Label label = new Label(needToSwap.get(i));
+            TextField textField = new TextField();
+            textField.setPrefColumnCount(20);
+            textField.textProperty().addListener((_, _, currText) -> Platform.runLater(() -> {
+                Text text = new Text(currText);
+                text.setFont(textField.getFont());
+
+                double width = text.getLayoutBounds().getWidth()
+                        + textField.getPadding().getLeft() + textField.getPadding().getRight()
+                        + 2d;
+                System.out.println(width);
+                if (width > 240d) {
+                    textField.setPrefWidth(width);
+                    textField.positionCaret(textField.getCaretPosition());
+
+                }
+            }));
+            root.addRow(i, label, textField);
         }
 
         submit.setOnAction(e -> wordToSwap = validateAndSaveData());
