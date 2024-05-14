@@ -192,7 +192,7 @@ public class MainWindow extends Application {
                         FileInputStream in = new FileInputStream(dataExcelFile.getAbsolutePath());
                         XSSFWorkbook inXlsx = new XSSFWorkbook(in))
                 {
-                    int numberOfHeading = 5;
+                    int numberOfHeading = 7;
                     int numberOfRowData = 9;
                     ResourceExcel.markData(inXlsx, numberOfHeading,numberOfRowData);
                     MainWindowEventHandler.settingLinesFromInformationFile(ResourceExcel.getMarkingColumns());

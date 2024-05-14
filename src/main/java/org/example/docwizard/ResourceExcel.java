@@ -1,11 +1,14 @@
 package org.example.docwizard;
 
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Iterator;
 
@@ -38,6 +41,10 @@ public class ResourceExcel {
         Iterator<Cell> cellIter = row.cellIterator();
         while (cellIter.hasNext()) {
             XSSFCell cell = (XSSFCell) cellIter.next();
+            if (cell == null || cell.getCellType() == CellType.BLANK){
+
+                cell = getNotNullCell(xlsx, index, numberOfRow - 1);
+            }
 
             switch (cell.getCellType()) {
                 case STRING:
@@ -45,7 +52,9 @@ public class ResourceExcel {
                     break;
                 case NUMERIC:
                     if (DateUtil.isCellDateFormatted(cell)) {
-                        cells[index] = String.valueOf(cell.getDateCellValue());
+
+                        DataFormatter dataFormatter = new DataFormatter();
+                        cells[index] = dataFormatter.formatCellValue(cell);
                     } else {
                         cells[index] = String.valueOf(cell.getNumericCellValue());
                     }
@@ -61,6 +70,20 @@ public class ResourceExcel {
             index++;
         }
         return cells;
+    }
+
+    private static XSSFCell getNotNullCell(XSSFWorkbook xlsx, int index, int numberOfRow){
+
+        XSSFSheet sheet = xlsx.getSheetAt(0);
+        XSSFRow row = sheet.getRow(numberOfRow);
+        XSSFCell outCell = row.getCell(index);
+
+        while (outCell == null || outCell.getCellType() == CellType.BLANK){
+
+            outCell = getNotNullCell(xlsx, index, numberOfRow - 1);
+        }
+
+        return outCell;
     }
 
     public static HashMap<String, String> getMarkingColumns(){
