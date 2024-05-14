@@ -20,7 +20,11 @@ public class ResourceExcel {
         String[] rowData = scanExcelRow(xlsx, numberOfRow);
 
         for (int i = 0; i < tableTitles.length; i++){
-            infInRow.put(tableTitles[i], rowData[i]);
+            if (tableTitles[i] != null){
+                infInRow.put(("##" + tableTitles[i].replace(" ","_")), rowData[i]);
+            }else{
+                infInRow.put(tableTitles[i], rowData[i]);
+            }
         }
     }
 

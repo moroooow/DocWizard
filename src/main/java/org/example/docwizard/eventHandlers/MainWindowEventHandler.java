@@ -237,4 +237,35 @@ public class MainWindowEventHandler {
         }
     }
 
+    public static void settingLinesFromInformationFile(HashMap<String, String> markingColumns){
+        String key = "";
+        String value;
+        for (Node ob : root.getChildren()) {
+
+            if (ob instanceof Label){
+                key = ((Label) ob).getText();
+                if (key != null) {
+                    key = key.toLowerCase();
+                }
+            }
+            if (ob instanceof TextField) {
+                value = findMarkingColumns(markingColumns,key);
+                if (value != null) {
+                    ((TextField) ob).setText(value);
+                }
+
+            }
+        }
+    }
+
+    public static String findMarkingColumns (HashMap<String, String> markingColumns, String key){
+        for (Map.Entry<String, String> entry : markingColumns.entrySet()) {
+            String value = entry.getKey();
+            if (entry.getKey() != null && value.toLowerCase().equals(key)) {
+                return entry.getValue();
+            }
+        }
+        return null;
+    }
+
 }

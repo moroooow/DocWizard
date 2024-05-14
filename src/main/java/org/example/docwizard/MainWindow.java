@@ -3,6 +3,7 @@ package org.example.docwizard;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Orientation;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.Button;
@@ -191,9 +192,10 @@ public class MainWindow extends Application {
                         FileInputStream in = new FileInputStream(dataExcelFile.getAbsolutePath());
                         XSSFWorkbook inXlsx = new XSSFWorkbook(in))
                 {
-                    //numberOfRowData are numbered from 0
+                    int numberOfHeading = 5;
                     int numberOfRowData = 9;
-                    ResourceExcel.markData(inXlsx, 5,numberOfRowData);
+                    ResourceExcel.markData(inXlsx, numberOfHeading,numberOfRowData);
+                    MainWindowEventHandler.settingLinesFromInformationFile(ResourceExcel.getMarkingColumns());
                 } catch (IOException ignored) {
                 }
              }
