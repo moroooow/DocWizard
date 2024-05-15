@@ -3,7 +3,6 @@ package org.example.docwizard;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Orientation;
-import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.Button;
@@ -25,9 +24,18 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class MainWindow extends Application {
-     private ArrayList<String> needToSwap = new ArrayList<>();
+     private final ArrayList<String> needToSwap = new ArrayList<>(){
+        @Override
+        public boolean add(String s) {
+            if (!contains(s)) {
+                return super.add(s);
+            }
+            return false;
+        }
+     };
      private TreeItem<File> rootItem;
      public final double minScreenWidth = 842.0;
      public final double minScreenHeight = 592.0;
@@ -40,13 +48,13 @@ public class MainWindow extends Application {
         stage.setMaximized(true);
         stage.setMinWidth(minScreenWidth);
         stage.setMinHeight(minScreenHeight);
-        // create a File chooser
+
         DirectoryChooser inputDirChooser = new DirectoryChooser();
         inputDirChooser.setTitle("Выберите папку: ");
         DirectoryChooser outputDirChooser = new DirectoryChooser();
 
         TreeView<File> treeView = new TreeView<>();
-        treeView.setCellFactory(param -> new FileTreeCell());
+        treeView.setCellFactory(_ -> new FileTreeCell());
         treeView.setShowRoot(false);
 
         treeView.setOnMouseClicked((MouseEvent event) ->{
@@ -69,7 +77,7 @@ public class MainWindow extends Application {
         mainPane.setDividerPosition(0,0.2);
         mainPane.setVisible(false);
 
-        chooseButton.setOnAction(event -> {
+        chooseButton.setOnAction(_ -> {
             File selectedDir = getInputDir(inputDirChooser, stage);
             if(selectedDir != null && selectedDir.canRead() && selectedDir.canWrite()){
                 rootItem = new TreeItem<>(selectedDir.getAbsoluteFile());
@@ -101,7 +109,7 @@ public class MainWindow extends Application {
 
         mainPane.getItems().addAll(treeView,hbox);
 
-        scanButton.setOnAction(event -> {
+        scanButton.setOnAction(_ -> {
                     if(dataExcelFile == null){
                         Alert alert = new Alert(Alert.AlertType.INFORMATION);
                         alert.setTitle("Информационный файл не выбран");
@@ -119,15 +127,16 @@ public class MainWindow extends Application {
                         }
                     }
             try {
-                fileScanner.handleScan(hbox);
+                needToSwap.clear();
+                fileScanner.handleScan(hbox, needToSwap);
             } catch (Exception e){
-                System.out.println(e);
+                System.out.println(e.getMessage());
             }
         });
 
         setHoverHintMessage(hintField, scanButton, "Найти все заполняемые поля в документах в текущей папке");
 
-        createButton.setOnAction(event -> MainWindowEventHandler.handleCreate(fileScanner,dataExcelFile, outputDirChooser, stage, needToSwap));
+        createButton.setOnAction(_ -> MainWindowEventHandler.handleCreate(fileScanner,dataExcelFile, outputDirChooser, stage, needToSwap));
         Scene scene = new Scene(vbox,minScreenWidth , minScreenHeight);
         scene.getStylesheets().add("/style.css");
 
@@ -136,7 +145,7 @@ public class MainWindow extends Application {
         // set the scene
         stage.setScene(scene);
         stage.show();
-        stage.setOnCloseRequest(windowEvent -> {
+        stage.setOnCloseRequest(_ -> {
             Platform.exit();
             System.exit(0);
         });
@@ -169,14 +178,14 @@ public class MainWindow extends Application {
         ContextMenu contextMenu = new ContextMenu();
         contextMenu.setStyle("-fx-font-family: 'Century Gothic'; -fx-font-size: 12px;");
         MenuItem openInExplorerItem = new MenuItem("Открыть в проводнике");
-        openInExplorerItem.setOnAction(event -> {
+        openInExplorerItem.setOnAction(_ -> {
             try{
                 Desktop.getDesktop().open(new File(selectedItem.getValue().getParent()));
             } catch(IOException ignored) { }
         });
 
         MenuItem deleteItem = new MenuItem("Исключить файл из проекта");
-        deleteItem.setOnAction(actionEvent -> {
+        deleteItem.setOnAction(_ -> {
             TreeItem<File> parentItem = selectedItem.getParent();
             if(selectedItem.getValue() == dataExcelFile){
                 dataExcelFile = null;
@@ -185,19 +194,20 @@ public class MainWindow extends Application {
         });
 
         MenuItem setDataExcelFile = new MenuItem("Установить файл информационным");
-        setDataExcelFile.setOnAction(actionEvent -> {
+        setDataExcelFile.setOnAction(_ -> {
             dataExcelFile = selectedItem.getValue();
              if (dataExcelFile.getAbsolutePath().endsWith(".xlsx")) {
                 try (
                         FileInputStream in = new FileInputStream(dataExcelFile.getAbsolutePath());
-                        XSSFWorkbook inXlsx = new XSSFWorkbook(in))
-                {
-                    int numberOfHeading = 7;
-                    int numberOfRowData = 9;
-                    ResourceExcel.markData(inXlsx, numberOfHeading,numberOfRowData);
+                        XSSFWorkbook inXlsx = new XSSFWorkbook(in)) {
+                    AtomicInteger headingNumber = new AtomicInteger();
+                    AtomicInteger rowNumber = new AtomicInteger();
+                    HeadingRowScene scene = new HeadingRowScene(headingNumber, rowNumber);
+                    scene.showScene();
+
+                    ResourceExcel.markData(inXlsx, headingNumber.get(),rowNumber.get());
                     MainWindowEventHandler.settingLinesFromInformationFile(ResourceExcel.getMarkingColumns());
-                } catch (IOException ignored) {
-                }
+                } catch (IOException ignored) { }
              }
         });
 
@@ -210,7 +220,7 @@ public class MainWindow extends Application {
     }
 
     private void setHoverHintMessage(TextField hintField, Button button, String message){
-        button.hoverProperty().addListener((observable, oldValue, newValue) -> {
+        button.hoverProperty().addListener((_, _, newValue) -> {
             if (newValue) {
                 hintField.setText(message);
             } else {

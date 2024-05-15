@@ -58,8 +58,7 @@ public class MainWindowEventHandler {
         for (File file : fileScanner.getDocxAndXlsxFiles()) {
             if (file != dataExcelFile) {
                 if (file.getAbsolutePath().endsWith(".docx")) {
-                    try (FileOutputStream out = new FileOutputStream(dir.getAbsolutePath() + "\\"
-                            + "new_" + file.getName());
+                    try (FileOutputStream out = new FileOutputStream(STR."\{dir.getAbsolutePath()}\\new_\{file.getName()}");
                          FileInputStream in = new FileInputStream(file.getAbsolutePath());
                          XWPFDocument inDoc = new XWPFDocument(in)) {
 
@@ -69,8 +68,7 @@ public class MainWindowEventHandler {
                     } catch (IOException ignored) {
                     }
                 } else if (file.getAbsolutePath().endsWith(".xlsx")) {
-                    try (FileOutputStream out = new FileOutputStream(dir.getAbsolutePath() + "\\"
-                            + "new_" + file.getName());
+                    try (FileOutputStream out = new FileOutputStream(STR."\{dir.getAbsolutePath()}\\new_\{file.getName()}");
                          FileInputStream in = new FileInputStream(file.getAbsolutePath());
                          XSSFWorkbook inXlsx = new XSSFWorkbook(in)
                     ) {
@@ -134,7 +132,7 @@ public class MainWindowEventHandler {
                 continue;
             }
             boolean flagHref = false;
-            String hrefText = "<a href=\"" + updatedText.get(i) + "\">" + updatedText.get(i) + "</a>";
+            String hrefText = STR."<a href=\"\{updatedText.get(i)}\">\{updatedText.get(i)}</a>";
 
             if(updatedText.get(i).contains("//")){
                 replaceAll(paragraphText, originalText.get(i),hrefText);
@@ -228,7 +226,7 @@ public class MainWindowEventHandler {
             root.addRow(i, label, textField);
         }
 
-        submit.setOnAction(e -> wordToSwap = validateAndSaveData());
+        submit.setOnAction(_ -> wordToSwap = validateAndSaveData());
         if(!root.getChildren().isEmpty()) {
             root.addRow(needToSwap.size(), submit);
         }

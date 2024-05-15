@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -129,9 +128,9 @@ public class FileScanner {
         return count;
     }
 
-    public Void handleScan(HBox hbox) {
+    public void handleScan(HBox hbox, List<String> res) {
         if (root == null) {
-            return null;
+            return;
         }
 
         ProgressBar progressBar = new ProgressBar();
@@ -148,40 +147,25 @@ public class FileScanner {
         ObservableAtomicInteger processedFiles = new ObservableAtomicInteger(0);
         int totalFileCount = getTotalFileCount(root);
 
-        Task<Void> task = getListTask(hbox, processedFiles, totalFileCount - 1);
+        Task<Void> task = getListTask(hbox, processedFiles, totalFileCount - 1, res);
 
-        task.setOnSucceeded(event -> {
-            Platform.runLater(stage::close);
-        });
+        task.setOnSucceeded(_ -> Platform.runLater(stage::close));
 
         progressBar.progressProperty().bind(task.progressProperty());
 
         Thread thread = new Thread(task);
         thread.start();
 
-        return null;
     }
 
-    private Task<Void> getListTask( HBox hbox, ObservableAtomicInteger processedFiles, int totalFileCount) {
+    private Task<Void> getListTask( HBox hbox, ObservableAtomicInteger processedFiles, int totalFileCount, List<String> res) {
         Task<Void> task = new Task<>() {
             @Override
-            protected Void call() throws InterruptedException {
-                ArrayList<String> res = new ArrayList<>() {
-                    @Override
-                    public boolean add(String s) {
-                        if (!contains(s)) {
-                            return super.add(s);
-                        }
-                        return false;
-                    }
-                };
-
+            protected Void call() {
 
                 CountDownLatch latch = new CountDownLatch(getTotalFileCount(root) - 1);
 
-                processedFiles.addChangeListener((oldValue, newValue) -> {
-                    updateProgress(newValue, totalFileCount);
-                });
+                processedFiles.addChangeListener((_, newValue) -> updateProgress(newValue, totalFileCount));
 
                 scanFiles(root, res, processedFiles,latch);
                 try {

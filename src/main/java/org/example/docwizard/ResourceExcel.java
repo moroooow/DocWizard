@@ -8,14 +8,13 @@ import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Iterator;
 
 import org.apache.poi.ss.usermodel.DateUtil;
 public class ResourceExcel {
 
-    private static HashMap<String, String> infInRow = new HashMap<String, String>();
+    private static final HashMap<String, String> infInRow = new HashMap<>();
 
     public static void markData(XSSFWorkbook xlsx, int numberOfTitles, int numberOfRow){
 
@@ -24,8 +23,8 @@ public class ResourceExcel {
 
         for (int i = 0; i < tableTitles.length; i++){
             if (tableTitles[i] != null){
-                infInRow.put(("##" + tableTitles[i].replace(" ","_")), rowData[i]);
-            }else{
+                infInRow.put((STR."##\{tableTitles[i].replace(" ", "_")}"), rowData[i]);
+            } else {
                 infInRow.put(tableTitles[i], rowData[i]);
             }
         }
@@ -52,7 +51,6 @@ public class ResourceExcel {
                     break;
                 case NUMERIC:
                     if (DateUtil.isCellDateFormatted(cell)) {
-
                         DataFormatter dataFormatter = new DataFormatter();
                         cells[index] = dataFormatter.formatCellValue(cell);
                     } else {
