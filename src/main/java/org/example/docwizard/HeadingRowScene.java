@@ -11,28 +11,22 @@ import javafx.stage.Stage;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class HeadingRowScene {
-    private Stage stage;
-    private Scene scene;
-    private GridPane pane;
-    private Label lblHeading;
-    private Label lblRow;
-    private TextField fieldHeading;
-    private TextField fieldRow;
-    private Button submitButton;
-
+    private final Stage stage;
+    private final TextField fieldHeading;
+    private final TextField fieldRow;
     public HeadingRowScene(AtomicInteger headingNumber, AtomicInteger rowNumber){
         stage = new Stage();
-        pane = new GridPane();
+        GridPane pane = new GridPane();
         pane.setHgap(10);
         pane.setVgap(10);
-        scene = new Scene(pane,400,200);
+        Scene scene = new Scene(pane, 400, 200);
         stage.setScene(scene);
         stage.setTitle("Введите заголовочной строки и номер строки с данными");
-        lblHeading = new Label("Введите номер заголовка:");
-        lblRow = new Label("Введите номер строки с данными:");
+        Label lblHeading = new Label("Введите номер заголовка:");
+        Label lblRow = new Label("Введите номер строки с данными:");
         fieldHeading = new TextField();
         fieldRow = new TextField();
-        submitButton = new Button("Подтвердить");
+        Button submitButton = new Button("Подтвердить");
         pane.add(lblHeading, 0, 0);
         pane.add(fieldHeading, 0, 1);
         pane.add(lblRow, 1, 0);
@@ -47,12 +41,6 @@ public class HeadingRowScene {
     }
     public void showScene(){
         stage.showAndWait();
-    }
-    public void closeScene(){
-        stage.close();
-    }
-    public Button getButton(){
-        return submitButton;
     }
     public int getValueFromHeading(){
         return Integer.parseInt(fieldHeading.getText());
