@@ -33,7 +33,13 @@ import java.util.concurrent.locks.ReentrantLock;
 public class FileScanner {
     private final TreeItem<File> root;
     private static final Lock lock = new ReentrantLock();
-
+    private static boolean isScanned = false;
+    public static boolean isScanned(){
+        return isScanned;
+    }
+    public static void resetIsScanned(){
+        isScanned = false;
+    }
     public FileScanner(TreeItem<File> root) {
         this.root = root;
     }
@@ -170,11 +176,14 @@ public class FileScanner {
                 scanFiles(root, res, processedFiles,latch);
                 try {
                     latch.await();
+                    isScanned = true;
+
                 } catch (InterruptedException e) {
                     return null;
                 }
 
                 Platform.runLater(() -> MainWindowEventHandler.handleSwap(hbox, res));
+
 
                 return null;
             }

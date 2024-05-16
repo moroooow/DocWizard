@@ -8,18 +8,34 @@ import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
 
 import org.apache.poi.ss.usermodel.DateUtil;
+import org.example.docwizard.eventHandlers.MainWindowEventHandler;
+
 public class ResourceExcel {
 
     private static final HashMap<String, String> infInRow = new HashMap<>();
+    public static void resetInfInRow(){
+        infInRow.clear();
+    }
+    private static int headingNumber;
+    private static int rowNumber;
+    public static void setHeadingNumber(int i) {
+        headingNumber = i;
+    }
+    public static void setRowNumber(int i) {
+        rowNumber = i;
+    }
 
-    public static void markData(XSSFWorkbook xlsx, int numberOfTitles, int numberOfRow){
+    public static void markData(XSSFWorkbook xlsx){
 
-        String[] tableTitles = scanExcelRow(xlsx, numberOfTitles);
-        String[] rowData = scanExcelRow(xlsx, numberOfRow);
+        String[] tableTitles = scanExcelRow(xlsx, headingNumber);
+        String[] rowData = scanExcelRow(xlsx, rowNumber);
 
         for (int i = 0; i < tableTitles.length; i++){
             if (tableTitles[i] != null){
@@ -84,6 +100,25 @@ public class ResourceExcel {
         return outCell;
     }
 
+    public static void scanningInformationFile(File dataExcelFile){
+        if (dataExcelFile != null) {
+            if (!HeadingRowScene.isScanned()) {
+                try (
+                        FileInputStream in = new FileInputStream(dataExcelFile.getAbsolutePath());
+                        XSSFWorkbook inXlsx = new XSSFWorkbook(in)) {
+                    HeadingRowScene scene = new HeadingRowScene();
+                    scene.showScene();
+
+                    ResourceExcel.markData(inXlsx);
+                } catch (IOException ignored) {
+                }
+            }
+            if (FileScanner.isScanned()){
+                MainWindowEventHandler.settingLinesFromInformationFile(ResourceExcel.getMarkingColumns());
+            }
+
+        }
+    }
     public static HashMap<String, String> getMarkingColumns(){
         return infInRow;
     }
