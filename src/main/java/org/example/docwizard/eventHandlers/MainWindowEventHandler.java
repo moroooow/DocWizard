@@ -1,11 +1,14 @@
 package org.example.docwizard.eventHandlers;
 
 
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
+import javafx.scene.text.Text;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 import org.apache.poi.ss.usermodel.Cell;
@@ -13,6 +16,8 @@ import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.*;
 import org.apache.poi.xwpf.usermodel.*;
+import org.example.docwizard.FileScanner;
+import org.example.docwizard.ResourceExcel;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -24,34 +29,16 @@ import java.util.regex.Pattern;
 
 public class MainWindowEventHandler {
     private static boolean isScanned = false;
+    private static List<String> wordToSwap;
     private static final GridPane root = new GridPane();
     public static void resetIsScanned(){
         isScanned = false;
         root.getChildren().clear();
     }
 
-    private static List<File> getDocxAndXlsxFiles(TreeItem<File> root){
-        List<File> res = new ArrayList<>();
-        getDocxAndXlsxFiles(root,res);
-        return res;
-    }
 
-    private static void getDocxAndXlsxFiles(TreeItem<File> root,List<File> res){
-        for(TreeItem<File> file : root.getChildren()){
-            if(file.getValue().isDirectory()){
-                getDocxAndXlsxFiles(file,res);
-                continue;
-            }
-
-            if(file.getValue().getName().endsWith(".docx") || file.getValue().getName().endsWith(".xlsx")){
-                res.add(file.getValue());
-            }
-        }
-    }
-
-    public static void handleCreate (TreeItem<File> files, File dataExcelFile, DirectoryChooser outputDirChooser, Stage stage, List<String> needToSwap, List<String> wordToSwap){
-
-        if (files.getChildren().isEmpty()) {
+    public static void handleCreate (FileScanner fileScanner, File dataExcelFile, DirectoryChooser outputDirChooser, Stage stage, List<String> needToSwap){
+        if (fileScanner.isEmpty()) {
             return;
         }
 
@@ -70,12 +57,10 @@ public class MainWindowEventHandler {
             return;
         }
 
-
-        for (File file : getDocxAndXlsxFiles(files)) {
+        for (File file : fileScanner.getDocxAndXlsxFiles()) {
             if (file != dataExcelFile) {
                 if (file.getAbsolutePath().endsWith(".docx")) {
-                    try (FileOutputStream out = new FileOutputStream(dir.getAbsolutePath() + "\\"
-                            + "new_" + file.getName());
+                    try (FileOutputStream out = new FileOutputStream(dir.getAbsolutePath()+"\\new_"+ file.getName());
                          FileInputStream in = new FileInputStream(file.getAbsolutePath());
                          XWPFDocument inDoc = new XWPFDocument(in)) {
 
@@ -85,8 +70,7 @@ public class MainWindowEventHandler {
                     } catch (IOException ignored) {
                     }
                 } else if (file.getAbsolutePath().endsWith(".xlsx")) {
-                    try (FileOutputStream out = new FileOutputStream(dir.getAbsolutePath() + "\\"
-                            + "new_" + file.getName());
+                    try (FileOutputStream out = new FileOutputStream(dir.getAbsolutePath()+"\\new_"+ file.getName());
                          FileInputStream in = new FileInputStream(file.getAbsolutePath());
                          XSSFWorkbook inXlsx = new XSSFWorkbook(in)
                     ) {
@@ -100,46 +84,6 @@ public class MainWindowEventHandler {
             }
         }
     }
-
-
-    private static void scanXlsxFile(XSSFWorkbook xlsx,ArrayList<String> res){
-        for (int i = 0; i<xlsx.getNumberOfSheets();i++) {
-            XSSFSheet sheet = xlsx.getSheetAt(i);
-
-            Iterator<Row> rowIter = sheet.rowIterator();
-
-            while (rowIter.hasNext()) {
-                Row row = rowIter.next();
-                Iterator<Cell> cellIter = row.cellIterator();
-
-                while (cellIter.hasNext()) {
-                    Cell cell = cellIter.next();
-                    if (cell.getCellType() == CellType.STRING) {
-                        String str = cell.getStringCellValue();
-                        findingMatches(str, res);
-                    }
-                }
-
-            }
-        }
-    }
-
-    private static void scanDocxFile(XWPFDocument doc, ArrayList<String> res) {
-        List<XWPFParagraph> paragraphs = doc.getParagraphs();
-        for (XWPFParagraph par : paragraphs) {
-            String str = par.getText();
-            findingMatches(str, res);
-        }
-    }
-
-    private static void findingMatches(String str, ArrayList<String> res){
-        Pattern p = Pattern.compile("##+[^:,.\\s\\t\\n]+");
-        Matcher m = p.matcher(str);
-        while (m.find()) {
-            res.add(m.group());
-        }
-    }
-
     private static XWPFDocument replaceTextInDocx(XWPFDocument doc, List<String> originalText, List<String> updatedText) {
         replaceTextInParagraphs(doc.getParagraphs(), originalText, updatedText);
         for (XWPFTable tbl : doc.getTables()) {
@@ -167,15 +111,10 @@ public class MainWindowEventHandler {
                     if (cell.getCellType() == CellType.STRING) {
 
                         for(int j = 0; j < originalText.size();j++) {
-                            String str = cell.getStringCellValue();
-                            Pattern p = Pattern.compile(originalText.get(j));
-                            Matcher m = p.matcher(str);
-                            if (m.find()) {
-                                cell.setCellValue(str.replaceAll(originalText.get(j),updatedText.get(j)));
-                            }
+                            StringBuilder str = new StringBuilder(cell.getStringCellValue());
+                            replaceAll(str, originalText.get(j),updatedText.get(j));
+                            cell.setCellValue(str.toString());
                         }
-
-
                     }
                 }
             }
@@ -194,8 +133,15 @@ public class MainWindowEventHandler {
             if (!paragraphText.toString().contains(originalText.get(i))) {
                 continue;
             }
+            boolean flagHref = false;
+            String hrefText = "<a href="+ updatedText.get(i) + ">" + updatedText.get(i) + "</a>";
 
-            replaceAll(paragraphText,originalText.get(i), updatedText.get(i));
+            if(updatedText.get(i).contains("//")){
+                replaceAll(paragraphText, originalText.get(i),hrefText);
+                flagHref = true;
+            } else {
+                replaceAll(paragraphText,originalText.get(i), updatedText.get(i));
+            }
 
             while (!paragraph.getRuns().isEmpty()) {
                 paragraph.removeRun(0);
@@ -219,8 +165,20 @@ public class MainWindowEventHandler {
                 newRun.setText(paragraphText.toString());
             }
 
-        }
+            if(flagHref){
+                String[] splitedHyperLinks = paragraphText.toString().split(hrefText);
 
+                for(int j = 0;  j < splitedHyperLinks.length; j++){
+                    XWPFHyperlinkRun hyperlinkRun = paragraph.createHyperlinkRun(hrefText);
+                    hyperlinkRun.setText(updatedText.get(i));
+                    hyperlinkRun.setColor("0000FF");
+                    hyperlinkRun.setUnderline(UnderlinePatterns.SINGLE);
+                    paragraph.addRun(hyperlinkRun);
+                }
+
+            }
+
+        }
     }
     private static void replaceAll(StringBuilder sb, String find, String replace){
         Pattern p = Pattern.compile(find);
@@ -233,54 +191,17 @@ public class MainWindowEventHandler {
         }
 
     }
-    private static void scanFiles(TreeItem<File> directory,List<String> collection) {
-        for (TreeItem<File> children : directory.getChildren()) {
-            if(children.getValue().isDirectory()){
-                scanFiles(children,collection);
-                continue;
-            }
-            if(children.getValue().getAbsolutePath().endsWith(".docx") ){
-                try (FileInputStream fis = new FileInputStream(children.getValue().getAbsolutePath())) {
 
-                    XWPFDocument doc = new XWPFDocument(fis);
-                    scanDocxFile(doc, (ArrayList<String>) collection);
-                } catch (IOException ignored) { }
-            }
-            else if(children.getValue().getAbsolutePath().endsWith(".xlsx") ){
-                try (FileInputStream fis = new FileInputStream(children.getValue().getAbsolutePath())) {
 
-                    XSSFWorkbook xlsx = new XSSFWorkbook(fis);
-                    scanXlsxFile(xlsx, (ArrayList<String>) collection);
-                } catch (IOException ignored) { }
-            }
-
-        }
-    }
-    public static List<String> handleScan(TreeItem<File> rootItem) {
-        ArrayList<String> res = new ArrayList<>(){
-            @Override
-            public boolean add(String s) {
-                if (!contains(s)) {
-                    return super.add(s);
-                }
-                return false;
-            }
-        };
-
-        if (rootItem != null) {
-            scanFiles(rootItem,res);
-            return  res;
-        }
-        return null;
-    }
-    public static void handleSwap(HBox hbox, List<String> needToSwap, List<String> wordToSwap) {
+    public static void handleSwap(HBox hbox, List<String> needToSwap) {
         root.getChildren().clear();
-        renderFields(needToSwap, wordToSwap);
+        renderFields(needToSwap);
         hbox.getChildren().clear();
         hbox.getChildren().add(root);
+        MainWindowEventHandler.settingLinesFromInformationFile(ResourceExcel.getMarkingColumns());
     }
 
-    private static void renderFields(List<String> needToSwap, List<String> wordToSwap){
+    private static void renderFields(List<String> needToSwap){
         root.setHgap(8);
         root.setVgap(8);
         root.setPadding(new Insets(5));
@@ -288,30 +209,84 @@ public class MainWindowEventHandler {
         Button submit = new Button("Подтвердить");
 
         for (int i = 0; i < needToSwap.size(); i++) {
-            root.addRow(i, new Label(needToSwap.get(i)), new TextField());
+            Label label = new Label(needToSwap.get(i));
+            TextField textField = new TextField();
+            textField.setPrefColumnCount(20);
+            textField.textProperty().addListener((observableValue, e, currText) -> Platform.runLater(() -> {
+                Text text = new Text(currText);
+                text.setFont(textField.getFont());
+
+                double width = text.getLayoutBounds().getWidth()
+                        + textField.getPadding().getLeft() + textField.getPadding().getRight()
+                        + 2d;
+                System.out.println(width);
+                if (width > 240d) {
+                    textField.setPrefWidth(width);
+                    textField.positionCaret(textField.getCaretPosition());
+                } else {
+                    textField.setPrefWidth(Region.USE_COMPUTED_SIZE);
+                }
+            }));
+            root.addRow(i, label, textField);
         }
 
-        submit.setOnAction(e -> validateAndSaveData(wordToSwap));
+        submit.setOnAction(event -> wordToSwap = validateAndSaveData());
         if(!root.getChildren().isEmpty()) {
             root.addRow(needToSwap.size(), submit);
         }
     }
 
-    private static void validateAndSaveData(List<String> wordToSwap){
+    private static List<String> validateAndSaveData(){
         boolean isFieldFilled = true;
+        List<String> temp = new ArrayList<>();
         for (Node ob : root.getChildren()) {
             if (ob instanceof TextField) {
                 if(((TextField) ob).getText().isEmpty()) {
                     ((TextField) ob).setPromptText("Поле не заполнено");
                     isFieldFilled = false;
                 } else {
-                    wordToSwap.add(((TextField) ob).getText());
+                    temp.add(((TextField) ob).getText());
                 }
             }
         }
         if(isFieldFilled){
             isScanned = true;
+            return temp;
+        } else {
+            isScanned = false;
+            return null;
         }
+    }
+
+    public static void settingLinesFromInformationFile(HashMap<String, String> markingColumns){
+        String key = "";
+        String value;
+        for (Node ob : root.getChildren()) {
+
+            if (ob instanceof Label){
+                key = ((Label) ob).getText();
+                if (key != null) {
+                    key = key.toLowerCase();
+                }
+            }
+            if (ob instanceof TextField) {
+                value = findMarkingColumns(markingColumns,key);
+                if (value != null) {
+                    ((TextField) ob).setText(value);
+                }
+
+            }
+        }
+    }
+
+    public static String findMarkingColumns (HashMap<String, String> markingColumns, String key){
+        for (Map.Entry<String, String> entry : markingColumns.entrySet()) {
+            String value = entry.getKey();
+            if (entry.getKey() != null && value.toLowerCase().equals(key)) {
+                return entry.getValue();
+            }
+        }
+        return null;
     }
 
 }

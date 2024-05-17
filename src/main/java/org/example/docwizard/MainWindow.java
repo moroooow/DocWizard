@@ -15,37 +15,56 @@ import javafx.stage.Stage;
 
 import java.awt.*;
 
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.example.docwizard.eventHandlers.MainWindowEventHandler;
 
 import javafx.scene.control.TextField;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class MainWindow extends Application {
-     private ArrayList<String> needToSwap = new ArrayList<>();
-     private final ArrayList<String> wordToSwap = new ArrayList<>();
-     private File selectedDir;
+     private final ArrayList<String> needToSwap = new ArrayList<String>(){
+        @Override
+        public boolean add(String s) {
+            if (!contains(s)) {
+                return super.add(s);
+            }
+            return false;
+        }
+     };
      private TreeItem<File> rootItem;
      public final double minScreenWidth = 842.0;
      public final double minScreenHeight = 592.0;
-     private static File dataExcelFile;
+     private Stage primaryStage;
+
+    public static File getDataExcelFile() {
+        return dataExcelFile;
+    }
+
+    private static File dataExcelFile;
+    public static void resetDataExcelFile(){
+        dataExcelFile = null;
+    }
+     private FileScanner fileScanner;
 
     @Override
-    public void start(Stage stage) {
-        stage.setTitle("DocWizard");
-        stage.setMaximized(true);
-        stage.setMinWidth(minScreenWidth);
-        stage.setMinHeight(minScreenHeight);
-        // create a File chooser
+    public void start(Stage primaryStage) {
+        this.primaryStage = primaryStage;
+        primaryStage.setTitle("DocWizard");
+        primaryStage.setMaximized(true);
+        primaryStage.setMinWidth(minScreenWidth);
+        primaryStage.setMinHeight(minScreenHeight);
+
         DirectoryChooser inputDirChooser = new DirectoryChooser();
         inputDirChooser.setTitle("Выберите папку: ");
-
         DirectoryChooser outputDirChooser = new DirectoryChooser();
 
         TreeView<File> treeView = new TreeView<>();
-        treeView.setCellFactory(param -> new FileTreeCell());
+        treeView.setCellFactory(event -> new FileTreeCell());
         treeView.setShowRoot(false);
 
         treeView.setOnMouseClicked((MouseEvent event) ->{
@@ -57,8 +76,7 @@ public class MainWindow extends Application {
             }
         });
 
-        TextField hintField = new TextField(
-                "Наведите кусор на кнопку, чтобы увидеть подсказку");
+        TextField hintField = new TextField("Наведите кусор на кнопку, чтобы увидеть подсказку");
         hintField.setEditable(false);
 
 
@@ -67,16 +85,21 @@ public class MainWindow extends Application {
         SplitPane mainPane = new SplitPane();
         HBox hbox = new HBox();
         mainPane.setDividerPosition(0,0.2);
+        mainPane.setVisible(false);
 
         chooseButton.setOnAction(event -> {
-            selectedDir = getInputDir(inputDirChooser, stage);
+            File selectedDir = getInputDir(inputDirChooser, primaryStage);
             if(selectedDir != null && selectedDir.canRead() && selectedDir.canWrite()){
                 rootItem = new TreeItem<>(selectedDir.getAbsoluteFile());
                 addFilesAndSubdirectories(selectedDir, rootItem);
+                fileScanner = new FileScanner(rootItem);
                 treeView.setRoot(rootItem);
-                MainWindowEventHandler.resetIsScanned();
+                ResourceExcel.resetInfInRow();
+                reset();
+                mainPane.setVisible(true);
             }
         });
+
         setHoverHintMessage(hintField, chooseButton, "Открыть папку с файлами");
         Button scanButton = new Button("Scan");
 
@@ -112,25 +135,28 @@ public class MainWindow extends Application {
                         if(res.isPresent() && res.get() == buttonTypeCancel){
                             return;
                         }
-
                     }
-                    needToSwap = (ArrayList<String>) MainWindowEventHandler.handleScan(treeView.getRoot());
-                    MainWindowEventHandler.handleSwap(hbox,needToSwap, wordToSwap);
-                }
-        );
+            try {
+                needToSwap.clear();
+                reset();
+                fileScanner.handleScan(hbox, needToSwap);
+            } catch (Exception e){
+                System.out.println(e.getMessage());
+            }
+        });
+
         setHoverHintMessage(hintField, scanButton, "Найти все заполняемые поля в документах в текущей папке");
 
-        createButton.setOnAction(event -> MainWindowEventHandler.handleCreate(rootItem,dataExcelFile, outputDirChooser, stage, needToSwap, wordToSwap));
+        createButton.setOnAction(event -> MainWindowEventHandler.handleCreate(fileScanner,dataExcelFile, outputDirChooser, primaryStage, needToSwap));
         Scene scene = new Scene(vbox,minScreenWidth , minScreenHeight);
         scene.getStylesheets().add("/style.css");
 
         setHoverHintMessage(hintField, createButton, "Сохранить все измененные поля и создать новый файл на их основе");
 
-
         // set the scene
-        stage.setScene(scene);
-        stage.show();
-        stage.setOnCloseRequest(windowEvent -> {
+        primaryStage.setScene(scene);
+        primaryStage.show();
+        primaryStage.setOnCloseRequest(event -> {
             Platform.exit();
             System.exit(0);
         });
@@ -151,6 +177,9 @@ public class MainWindow extends Application {
         }
         for (File file : files) {
             TreeItem<File> item = new TreeItem<>(file);
+            if(file.getName().startsWith("~")){
+                continue;
+            }
             parentItem.getChildren().add(item);
 
             if (file.isDirectory()) {
@@ -159,27 +188,33 @@ public class MainWindow extends Application {
         }
     }
 
-    public static ContextMenu configureContextMenu(TreeItem<File> selectedItem){
+    public ContextMenu configureContextMenu(TreeItem<File> selectedItem){
         ContextMenu contextMenu = new ContextMenu();
+        contextMenu.setStyle("-fx-font-family: 'Century Gothic'; -fx-font-size: 12px;");
         MenuItem openInExplorerItem = new MenuItem("Открыть в проводнике");
         openInExplorerItem.setOnAction(event -> {
             try{
                 Desktop.getDesktop().open(new File(selectedItem.getValue().getParent()));
-            } catch(IOException ignored){
-            }
+            } catch(IOException ignored) { }
         });
 
         MenuItem deleteItem = new MenuItem("Исключить файл из проекта");
-        deleteItem.setOnAction(actionEvent -> {
+        deleteItem.setOnAction(event -> {
             TreeItem<File> parentItem = selectedItem.getParent();
             if(selectedItem.getValue() == dataExcelFile){
                 dataExcelFile = null;
             }
+            fileScanner.removeItem(selectedItem);
             parentItem.getChildren().remove(selectedItem);
         });
 
         MenuItem setDataExcelFile = new MenuItem("Установить файл информационным");
-        setDataExcelFile.setOnAction(actionEvent -> dataExcelFile = selectedItem.getValue());
+        setDataExcelFile.setOnAction(event -> {
+            dataExcelFile = selectedItem.getValue();
+            HeadingRowScene.resetIsScanned();
+
+            ResourceExcel.scanningInformationFile(dataExcelFile,primaryStage);
+        });
 
         contextMenu.getItems().addAll(openInExplorerItem, deleteItem);
         if(selectedItem.getValue().getName().endsWith(".xlsx")){
@@ -190,7 +225,7 @@ public class MainWindow extends Application {
     }
 
     private void setHoverHintMessage(TextField hintField, Button button, String message){
-        button.hoverProperty().addListener((observable, oldValue, newValue) -> {
+        button.hoverProperty().addListener((old, er, newValue) -> {
             if (newValue) {
                 hintField.setText(message);
             } else {
@@ -199,4 +234,10 @@ public class MainWindow extends Application {
         });
     }
 
+    private void reset(){
+        FileScanner.resetIsScanned();
+        HeadingRowScene.resetIsScanned();
+        MainWindow.resetDataExcelFile();
+        MainWindowEventHandler.resetIsScanned();
+    }
 }
