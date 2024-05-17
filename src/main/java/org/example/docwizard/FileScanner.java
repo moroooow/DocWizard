@@ -83,12 +83,8 @@ public class FileScanner {
                 latch.countDown();
                 continue;
             }
-            if(children.getValue().getName().startsWith("~")){
-                latch.countDown();
-                continue;
-            }
             if (children.getValue().getAbsolutePath().endsWith(".docx")) {
-                Task<Void> task = new Task<>() {
+                Task<Void> task = new Task<Void>() {
                     @Override
                     protected Void call() {
                         try (FileInputStream fis = new FileInputStream(children.getValue().getAbsolutePath())) {
@@ -105,7 +101,7 @@ public class FileScanner {
 
                 new Thread(task).start();
             } else if (children.getValue().getAbsolutePath().endsWith(".xlsx")) {
-                Task<Void> task = new Task<>() {
+                Task<Void> task = new Task<Void>() {
                     @Override
                     protected Void call() {
                         try (FileInputStream fis = new FileInputStream(children.getValue().getAbsolutePath())) {
@@ -169,13 +165,13 @@ public class FileScanner {
     }
 
     private Task<Void> getListTask( HBox hbox, ObservableAtomicInteger processedFiles, int totalFileCount, List<String> res) {
-        Task<Void> task = new Task<>() {
+        Task<Void> task = new Task<Void>() {
             @Override
             protected Void call() {
 
                 CountDownLatch latch = new CountDownLatch(getTotalFileCount(root) - 1);
 
-                processedFiles.addChangeListener((_, newValue) -> updateProgress(newValue, totalFileCount));
+                processedFiles.addChangeListener((oldValue, newValue) -> updateProgress(newValue, totalFileCount));
 
                 scanFiles(root, res, processedFiles,latch);
                 try {
@@ -227,7 +223,7 @@ public class FileScanner {
     }
 
     private static void findingMatches(String str, ArrayList<String> res) {
-        Pattern p = Pattern.compile("##[^\\s:,.\\t\\n()]([^)])[^\\s:,.\\t\\n()]*|##[^\\s:,.\\t\\n()]+");
+        Pattern p = Pattern.compile("##[^\\s:,.\\t\\n()]*\\([^)]*\\)[^\\s:,.\\t\\n()]*|##[^\\s:,.\\t\\n()]+");
         Matcher m = p.matcher(str);
         lock.lock();
         try {

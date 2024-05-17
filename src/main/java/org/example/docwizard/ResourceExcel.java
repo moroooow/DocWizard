@@ -1,5 +1,6 @@
 package org.example.docwizard;
 
+import javafx.stage.Stage;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.DataFormatter;
@@ -39,7 +40,7 @@ public class ResourceExcel {
 
         for (int i = 0; i < tableTitles.length; i++){
             if (tableTitles[i] != null){
-                infInRow.put((STR."##\{tableTitles[i].replace(" ", "_")}"), rowData[i]);
+                infInRow.put(("##" + tableTitles[i].replace(" ", "_")), rowData[i]);
             } else {
                 infInRow.put(tableTitles[i], rowData[i]);
             }
@@ -100,13 +101,14 @@ public class ResourceExcel {
         return outCell;
     }
 
-    public static void scanningInformationFile(File dataExcelFile){
+    public static void scanningInformationFile(File dataExcelFile, Stage primaryStage){
         if (dataExcelFile != null) {
             if (!HeadingRowScene.isScanned()) {
                 try (
                         FileInputStream in = new FileInputStream(dataExcelFile.getAbsolutePath());
                         XSSFWorkbook inXlsx = new XSSFWorkbook(in)) {
                     HeadingRowScene scene = new HeadingRowScene();
+                    scene.setOwner(primaryStage);
                     scene.showScene();
 
                     ResourceExcel.markData(inXlsx);

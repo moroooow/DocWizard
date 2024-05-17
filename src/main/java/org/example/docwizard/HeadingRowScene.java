@@ -6,7 +6,10 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class HeadingRowScene {
     private final Stage stage;
@@ -39,7 +42,7 @@ public class HeadingRowScene {
         pane.add(fieldRow, 1, 1);
         pane.add(submitButton, 2, 1);
         pane.setAlignment(Pos.CENTER);
-        submitButton.setOnAction(_ -> {
+        submitButton.setOnAction(ev -> {
             int valueFromHeading = getValueFromHeading();
             int valueFromRow = getValueFromRow();
             if (valueFromHeading != 0 && valueFromRow != 0){
@@ -54,6 +57,11 @@ public class HeadingRowScene {
     public void showScene(){
         stage.showAndWait();
     }
+    public void setOwner(Stage stage){
+        this.stage.initOwner(stage);
+        this.stage.initModality(Modality.WINDOW_MODAL);
+    }
+
     public int getValueFromHeading(){
         return Integer.parseInt(fieldHeading.getText());
     }

@@ -39,6 +39,7 @@ public class MainWindow extends Application {
      private TreeItem<File> rootItem;
      public final double minScreenWidth = 842.0;
      public final double minScreenHeight = 592.0;
+     private Stage primaryStage;
 
     public static File getDataExcelFile() {
         return dataExcelFile;
@@ -51,18 +52,19 @@ public class MainWindow extends Application {
      private FileScanner fileScanner;
 
     @Override
-    public void start(Stage stage) {
-        stage.setTitle("DocWizard");
-        stage.setMaximized(true);
-        stage.setMinWidth(minScreenWidth);
-        stage.setMinHeight(minScreenHeight);
+    public void start(Stage primaryStage) {
+        this.primaryStage = primaryStage;
+        primaryStage.setTitle("DocWizard");
+        primaryStage.setMaximized(true);
+        primaryStage.setMinWidth(minScreenWidth);
+        primaryStage.setMinHeight(minScreenHeight);
 
         DirectoryChooser inputDirChooser = new DirectoryChooser();
         inputDirChooser.setTitle("Выберите папку: ");
         DirectoryChooser outputDirChooser = new DirectoryChooser();
 
         TreeView<File> treeView = new TreeView<>();
-        treeView.setCellFactory(_ -> new FileTreeCell());
+        treeView.setCellFactory(event -> new FileTreeCell());
         treeView.setShowRoot(false);
 
         treeView.setOnMouseClicked((MouseEvent event) ->{
@@ -85,8 +87,8 @@ public class MainWindow extends Application {
         mainPane.setDividerPosition(0,0.2);
         mainPane.setVisible(false);
 
-        chooseButton.setOnAction(_ -> {
-            File selectedDir = getInputDir(inputDirChooser, stage);
+        chooseButton.setOnAction(event -> {
+            File selectedDir = getInputDir(inputDirChooser, primaryStage);
             if(selectedDir != null && selectedDir.canRead() && selectedDir.canWrite()){
                 rootItem = new TreeItem<>(selectedDir.getAbsoluteFile());
                 addFilesAndSubdirectories(selectedDir, rootItem);
@@ -117,7 +119,7 @@ public class MainWindow extends Application {
 
         mainPane.getItems().addAll(treeView,hbox);
 
-        scanButton.setOnAction(_ -> {
+        scanButton.setOnAction(event -> {
                     if(dataExcelFile == null){
                         Alert alert = new Alert(Alert.AlertType.INFORMATION);
                         alert.setTitle("Информационный файл не выбран");
@@ -145,16 +147,16 @@ public class MainWindow extends Application {
 
         setHoverHintMessage(hintField, scanButton, "Найти все заполняемые поля в документах в текущей папке");
 
-        createButton.setOnAction(_ -> MainWindowEventHandler.handleCreate(fileScanner,dataExcelFile, outputDirChooser, stage, needToSwap));
+        createButton.setOnAction(event -> MainWindowEventHandler.handleCreate(fileScanner,dataExcelFile, outputDirChooser, primaryStage, needToSwap));
         Scene scene = new Scene(vbox,minScreenWidth , minScreenHeight);
         scene.getStylesheets().add("/style.css");
 
         setHoverHintMessage(hintField, createButton, "Сохранить все измененные поля и создать новый файл на их основе");
 
         // set the scene
-        stage.setScene(scene);
-        stage.show();
-        stage.setOnCloseRequest(_ -> {
+        primaryStage.setScene(scene);
+        primaryStage.show();
+        primaryStage.setOnCloseRequest(event -> {
             Platform.exit();
             System.exit(0);
         });
@@ -175,6 +177,9 @@ public class MainWindow extends Application {
         }
         for (File file : files) {
             TreeItem<File> item = new TreeItem<>(file);
+            if(file.getName().startsWith("~")){
+                continue;
+            }
             parentItem.getChildren().add(item);
 
             if (file.isDirectory()) {
@@ -183,31 +188,32 @@ public class MainWindow extends Application {
         }
     }
 
-    public static ContextMenu configureContextMenu(TreeItem<File> selectedItem){
+    public ContextMenu configureContextMenu(TreeItem<File> selectedItem){
         ContextMenu contextMenu = new ContextMenu();
         contextMenu.setStyle("-fx-font-family: 'Century Gothic'; -fx-font-size: 12px;");
         MenuItem openInExplorerItem = new MenuItem("Открыть в проводнике");
-        openInExplorerItem.setOnAction(_ -> {
+        openInExplorerItem.setOnAction(event -> {
             try{
                 Desktop.getDesktop().open(new File(selectedItem.getValue().getParent()));
             } catch(IOException ignored) { }
         });
 
         MenuItem deleteItem = new MenuItem("Исключить файл из проекта");
-        deleteItem.setOnAction(_ -> {
+        deleteItem.setOnAction(event -> {
             TreeItem<File> parentItem = selectedItem.getParent();
             if(selectedItem.getValue() == dataExcelFile){
                 dataExcelFile = null;
             }
+            fileScanner.removeItem(selectedItem);
             parentItem.getChildren().remove(selectedItem);
         });
 
         MenuItem setDataExcelFile = new MenuItem("Установить файл информационным");
-        setDataExcelFile.setOnAction(_ -> {
+        setDataExcelFile.setOnAction(event -> {
             dataExcelFile = selectedItem.getValue();
             HeadingRowScene.resetIsScanned();
 
-            ResourceExcel.scanningInformationFile(dataExcelFile);
+            ResourceExcel.scanningInformationFile(dataExcelFile,primaryStage);
         });
 
         contextMenu.getItems().addAll(openInExplorerItem, deleteItem);
@@ -219,7 +225,7 @@ public class MainWindow extends Application {
     }
 
     private void setHoverHintMessage(TextField hintField, Button button, String message){
-        button.hoverProperty().addListener((_, _, newValue) -> {
+        button.hoverProperty().addListener((old, er, newValue) -> {
             if (newValue) {
                 hintField.setText(message);
             } else {

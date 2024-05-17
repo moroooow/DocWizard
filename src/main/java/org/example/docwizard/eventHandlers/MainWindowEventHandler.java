@@ -60,8 +60,7 @@ public class MainWindowEventHandler {
         for (File file : fileScanner.getDocxAndXlsxFiles()) {
             if (file != dataExcelFile) {
                 if (file.getAbsolutePath().endsWith(".docx")) {
-                    try (FileOutputStream out =
-                                 new FileOutputStream(STR."\{dir.getAbsolutePath()}\\new_\{file.getName()}");
+                    try (FileOutputStream out = new FileOutputStream(dir.getAbsolutePath()+"\\new_"+ file.getName());
                          FileInputStream in = new FileInputStream(file.getAbsolutePath());
                          XWPFDocument inDoc = new XWPFDocument(in)) {
 
@@ -71,8 +70,7 @@ public class MainWindowEventHandler {
                     } catch (IOException ignored) {
                     }
                 } else if (file.getAbsolutePath().endsWith(".xlsx")) {
-                    try (FileOutputStream out =
-                                 new FileOutputStream(STR."\{dir.getAbsolutePath()}\\new_\{file.getName()}");
+                    try (FileOutputStream out = new FileOutputStream(dir.getAbsolutePath()+"\\new_"+ file.getName());
                          FileInputStream in = new FileInputStream(file.getAbsolutePath());
                          XSSFWorkbook inXlsx = new XSSFWorkbook(in)
                     ) {
@@ -125,12 +123,10 @@ public class MainWindowEventHandler {
     }
 
 
-    private static void replaceTextInParagraphs(List<XWPFParagraph> paragraphs,
-                                                List<String> originalText, List<String> updatedText) {
+    private static void replaceTextInParagraphs(List<XWPFParagraph> paragraphs, List<String> originalText, List<String> updatedText) {
         paragraphs.forEach(paragraph -> replaceTextInParagraph(paragraph, originalText, updatedText));
     }
-    private static void replaceTextInParagraph(XWPFParagraph paragraph,
-                                               List<String> originalText, List<String> updatedText) {
+    private static void replaceTextInParagraph(XWPFParagraph paragraph, List<String> originalText, List<String> updatedText) {
         StringBuilder paragraphText = new StringBuilder(paragraph.getParagraphText());
 
         for(int i = 0; i < originalText.size(); i ++){
@@ -138,7 +134,7 @@ public class MainWindowEventHandler {
                 continue;
             }
             boolean flagHref = false;
-            String hrefText = STR."<a href=\"\{updatedText.get(i)}\">\{updatedText.get(i)}</a>";
+            String hrefText = "<a href="+ updatedText.get(i) + ">" + updatedText.get(i) + "</a>";
 
             if(updatedText.get(i).contains("//")){
                 replaceAll(paragraphText, originalText.get(i),hrefText);
@@ -216,13 +212,14 @@ public class MainWindowEventHandler {
             Label label = new Label(needToSwap.get(i));
             TextField textField = new TextField();
             textField.setPrefColumnCount(20);
-            textField.textProperty().addListener((_, _, currText) -> Platform.runLater(() -> {
+            textField.textProperty().addListener((observableValue, e, currText) -> Platform.runLater(() -> {
                 Text text = new Text(currText);
                 text.setFont(textField.getFont());
 
                 double width = text.getLayoutBounds().getWidth()
                         + textField.getPadding().getLeft() + textField.getPadding().getRight()
                         + 2d;
+                System.out.println(width);
                 if (width > 240d) {
                     textField.setPrefWidth(width);
                     textField.positionCaret(textField.getCaretPosition());
@@ -233,7 +230,7 @@ public class MainWindowEventHandler {
             root.addRow(i, label, textField);
         }
 
-        submit.setOnAction(_ -> wordToSwap = validateAndSaveData());
+        submit.setOnAction(event -> wordToSwap = validateAndSaveData());
         if(!root.getChildren().isEmpty()) {
             root.addRow(needToSwap.size(), submit);
         }
