@@ -33,7 +33,13 @@ import java.util.concurrent.locks.ReentrantLock;
 public class FileScanner {
     private final TreeItem<File> root;
     private static final Lock lock = new ReentrantLock();
-
+    private static boolean isScanned = false;
+    public static boolean isScanned(){
+        return isScanned;
+    }
+    public static void resetIsScanned(){
+        isScanned = false;
+    }
     public FileScanner(TreeItem<File> root) {
         this.root = root;
     }
@@ -74,6 +80,10 @@ public class FileScanner {
             processFiles.incrementAndGet();
             if (children.getValue().isDirectory()) {
                 scanFiles(children, collection, processFiles, latch);
+                latch.countDown();
+                continue;
+            }
+            if(children.getValue().getName().startsWith("~")){
                 latch.countDown();
                 continue;
             }
@@ -170,11 +180,14 @@ public class FileScanner {
                 scanFiles(root, res, processedFiles,latch);
                 try {
                     latch.await();
+                    isScanned = true;
+
                 } catch (InterruptedException e) {
                     return null;
                 }
 
                 Platform.runLater(() -> MainWindowEventHandler.handleSwap(hbox, res));
+
 
                 return null;
             }
@@ -214,7 +227,7 @@ public class FileScanner {
     }
 
     private static void findingMatches(String str, ArrayList<String> res) {
-        Pattern p = Pattern.compile("##+[^:,.\\s\\t\\n]+");
+        Pattern p = Pattern.compile("##[^\\s:,.\\t\\n()]([^)])[^\\s:,.\\t\\n()]*|##[^\\s:,.\\t\\n()]+");
         Matcher m = p.matcher(str);
         lock.lock();
         try {

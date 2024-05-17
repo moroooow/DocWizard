@@ -7,6 +7,7 @@ import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
 import javafx.scene.text.Text;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
@@ -16,6 +17,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.*;
 import org.apache.poi.xwpf.usermodel.*;
 import org.example.docwizard.FileScanner;
+import org.example.docwizard.ResourceExcel;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -58,7 +60,8 @@ public class MainWindowEventHandler {
         for (File file : fileScanner.getDocxAndXlsxFiles()) {
             if (file != dataExcelFile) {
                 if (file.getAbsolutePath().endsWith(".docx")) {
-                    try (FileOutputStream out = new FileOutputStream(STR."\{dir.getAbsolutePath()}\\new_\{file.getName()}");
+                    try (FileOutputStream out =
+                                 new FileOutputStream(STR."\{dir.getAbsolutePath()}\\new_\{file.getName()}");
                          FileInputStream in = new FileInputStream(file.getAbsolutePath());
                          XWPFDocument inDoc = new XWPFDocument(in)) {
 
@@ -68,7 +71,8 @@ public class MainWindowEventHandler {
                     } catch (IOException ignored) {
                     }
                 } else if (file.getAbsolutePath().endsWith(".xlsx")) {
-                    try (FileOutputStream out = new FileOutputStream(STR."\{dir.getAbsolutePath()}\\new_\{file.getName()}");
+                    try (FileOutputStream out =
+                                 new FileOutputStream(STR."\{dir.getAbsolutePath()}\\new_\{file.getName()}");
                          FileInputStream in = new FileInputStream(file.getAbsolutePath());
                          XSSFWorkbook inXlsx = new XSSFWorkbook(in)
                     ) {
@@ -121,10 +125,12 @@ public class MainWindowEventHandler {
     }
 
 
-    private static void replaceTextInParagraphs(List<XWPFParagraph> paragraphs, List<String> originalText, List<String> updatedText) {
+    private static void replaceTextInParagraphs(List<XWPFParagraph> paragraphs,
+                                                List<String> originalText, List<String> updatedText) {
         paragraphs.forEach(paragraph -> replaceTextInParagraph(paragraph, originalText, updatedText));
     }
-    private static void replaceTextInParagraph(XWPFParagraph paragraph, List<String> originalText, List<String> updatedText) {
+    private static void replaceTextInParagraph(XWPFParagraph paragraph,
+                                               List<String> originalText, List<String> updatedText) {
         StringBuilder paragraphText = new StringBuilder(paragraph.getParagraphText());
 
         for(int i = 0; i < originalText.size(); i ++){
@@ -196,6 +202,7 @@ public class MainWindowEventHandler {
         renderFields(needToSwap);
         hbox.getChildren().clear();
         hbox.getChildren().add(root);
+        MainWindowEventHandler.settingLinesFromInformationFile(ResourceExcel.getMarkingColumns());
     }
 
     private static void renderFields(List<String> needToSwap){
@@ -216,11 +223,11 @@ public class MainWindowEventHandler {
                 double width = text.getLayoutBounds().getWidth()
                         + textField.getPadding().getLeft() + textField.getPadding().getRight()
                         + 2d;
-                System.out.println(width);
                 if (width > 240d) {
                     textField.setPrefWidth(width);
                     textField.positionCaret(textField.getCaretPosition());
-
+                } else {
+                    textField.setPrefWidth(Region.USE_COMPUTED_SIZE);
                 }
             }));
             root.addRow(i, label, textField);

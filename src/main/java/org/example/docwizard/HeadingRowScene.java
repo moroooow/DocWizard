@@ -8,13 +8,19 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 public class HeadingRowScene {
     private final Stage stage;
     private final TextField fieldHeading;
     private final TextField fieldRow;
-    public HeadingRowScene(AtomicInteger headingNumber, AtomicInteger rowNumber){
+    private static boolean isScanned = false;
+    public static boolean isScanned(){
+        return isScanned;
+    }
+    public static void resetIsScanned(){
+        isScanned = false;
+    }
+    public HeadingRowScene(){
+        isScanned = false;
         stage = new Stage();
         GridPane pane = new GridPane();
         pane.setHgap(10);
@@ -34,11 +40,17 @@ public class HeadingRowScene {
         pane.add(submitButton, 2, 1);
         pane.setAlignment(Pos.CENTER);
         submitButton.setOnAction(_ -> {
-            headingNumber.set(getValueFromHeading() - 1);
-            rowNumber.set(getValueFromRow() - 1);
+            int valueFromHeading = getValueFromHeading();
+            int valueFromRow = getValueFromRow();
+            if (valueFromHeading != 0 && valueFromRow != 0){
+                ResourceExcel.setHeadingNumber(getValueFromHeading() - 1);
+                ResourceExcel.setRowNumber(getValueFromRow() - 1);
+                isScanned = true;
+            }
             stage.close();
         });
     }
+
     public void showScene(){
         stage.showAndWait();
     }
