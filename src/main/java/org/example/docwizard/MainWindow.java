@@ -15,16 +15,19 @@ import javafx.stage.Stage;
 
 import java.awt.*;
 
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.example.docwizard.eventHandlers.MainWindowEventHandler;
 
 import javafx.scene.control.TextField;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class MainWindow extends Application {
-     private final ArrayList<String> needToSwap = new ArrayList<>(){
+     private final ArrayList<String> needToSwap = new ArrayList<String>(){
         @Override
         public boolean add(String s) {
             if (!contains(s)) {
@@ -89,6 +92,7 @@ public class MainWindow extends Application {
                 addFilesAndSubdirectories(selectedDir, rootItem);
                 fileScanner = new FileScanner(rootItem);
                 treeView.setRoot(rootItem);
+                ResourceExcel.resetInfInRow();
                 reset();
                 mainPane.setVisible(true);
             }
@@ -132,9 +136,8 @@ public class MainWindow extends Application {
                     }
             try {
                 needToSwap.clear();
-                fileScanner.handleScan(hbox, needToSwap);
-
                 reset();
+                fileScanner.handleScan(hbox, needToSwap);
             } catch (Exception e){
                 System.out.println(e.getMessage());
             }
@@ -202,6 +205,8 @@ public class MainWindow extends Application {
         MenuItem setDataExcelFile = new MenuItem("Установить файл информационным");
         setDataExcelFile.setOnAction(_ -> {
             dataExcelFile = selectedItem.getValue();
+            HeadingRowScene.resetIsScanned();
+
             ResourceExcel.scanningInformationFile(dataExcelFile);
         });
 
@@ -226,7 +231,6 @@ public class MainWindow extends Application {
     private void reset(){
         FileScanner.resetIsScanned();
         HeadingRowScene.resetIsScanned();
-        ResourceExcel.resetInfInRow();
         MainWindow.resetDataExcelFile();
         MainWindowEventHandler.resetIsScanned();
     }

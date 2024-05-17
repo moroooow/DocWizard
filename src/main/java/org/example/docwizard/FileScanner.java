@@ -83,6 +83,10 @@ public class FileScanner {
                 latch.countDown();
                 continue;
             }
+            if(children.getValue().getName().startsWith("~")){
+                latch.countDown();
+                continue;
+            }
             if (children.getValue().getAbsolutePath().endsWith(".docx")) {
                 Task<Void> task = new Task<>() {
                     @Override
@@ -223,7 +227,7 @@ public class FileScanner {
     }
 
     private static void findingMatches(String str, ArrayList<String> res) {
-        Pattern p = Pattern.compile("##+[^:,.\\s\\t\\n]+");
+        Pattern p = Pattern.compile("##[^\\s:,.\\t\\n()]([^)])[^\\s:,.\\t\\n()]*|##[^\\s:,.\\t\\n()]+");
         Matcher m = p.matcher(str);
         lock.lock();
         try {
