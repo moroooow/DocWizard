@@ -48,10 +48,6 @@ public class FileScanner {
         root.getChildren().remove(selectedItem);
     }
 
-    public TreeItem<File> getRoot() {
-        return root;
-    }
-
     public List<File> getDocxAndXlsxFiles() {
         List<File> res = new ArrayList<>();
         getDocxAndXlsxFiles(root, res);
@@ -69,7 +65,7 @@ public class FileScanner {
                 continue;
             }
 
-            if (file.getValue().getName().endsWith(".docx") || file.getValue().getName().endsWith(".xlsx")) {
+            if (file.getValue().getName().toLowerCase().endsWith(".docx") || file.getValue().getName().toLowerCase().endsWith(".xlsx")) {
                 res.add(file.getValue());
             }
         }
@@ -83,7 +79,7 @@ public class FileScanner {
                 latch.countDown();
                 continue;
             }
-            if (children.getValue().getAbsolutePath().endsWith(".docx")) {
+            if (children.getValue().getAbsolutePath().toLowerCase().endsWith(".docx")) {
                 Task<Void> task = new Task<Void>() {
                     @Override
                     protected Void call() {
@@ -100,7 +96,7 @@ public class FileScanner {
                 };
 
                 new Thread(task).start();
-            } else if (children.getValue().getAbsolutePath().endsWith(".xlsx")) {
+            } else if (children.getValue().getAbsolutePath().toLowerCase().endsWith(".xlsx")) {
                 Task<Void> task = new Task<Void>() {
                     @Override
                     protected Void call() {
@@ -155,7 +151,7 @@ public class FileScanner {
 
         Task<Void> task = getListTask(hbox, processedFiles, totalFileCount - 1, res);
 
-        task.setOnSucceeded(_ -> Platform.runLater(stage::close));
+        task.setOnSucceeded(event -> Platform.runLater(stage::close));
 
         progressBar.progressProperty().bind(task.progressProperty());
 

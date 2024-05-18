@@ -59,8 +59,9 @@ public class MainWindowEventHandler {
 
         for (File file : fileScanner.getDocxAndXlsxFiles()) {
             if (file != dataExcelFile) {
-                if (file.getAbsolutePath().endsWith(".docx")) {
-                    try (FileOutputStream out = new FileOutputStream(dir.getAbsolutePath()+"\\new_"+ file.getName());
+                if (file.getAbsolutePath().toLowerCase().endsWith(".docx")) {
+                    try (FileOutputStream out = new FileOutputStream(dir.getAbsolutePath() +
+                            File.separator + file.getName());
                          FileInputStream in = new FileInputStream(file.getAbsolutePath());
                          XWPFDocument inDoc = new XWPFDocument(in)) {
 
@@ -69,8 +70,9 @@ public class MainWindowEventHandler {
 
                     } catch (IOException ignored) {
                     }
-                } else if (file.getAbsolutePath().endsWith(".xlsx")) {
-                    try (FileOutputStream out = new FileOutputStream(dir.getAbsolutePath()+"\\new_"+ file.getName());
+                } else if (file.getAbsolutePath().toLowerCase().endsWith(".xlsx")) {
+                    try (FileOutputStream out = new FileOutputStream(dir.getAbsolutePath() +
+                            File.separator + file.getName());
                          FileInputStream in = new FileInputStream(file.getAbsolutePath());
                          XSSFWorkbook inXlsx = new XSSFWorkbook(in)
                     ) {
@@ -219,7 +221,6 @@ public class MainWindowEventHandler {
                 double width = text.getLayoutBounds().getWidth()
                         + textField.getPadding().getLeft() + textField.getPadding().getRight()
                         + 2d;
-                System.out.println(width);
                 if (width > 240d) {
                     textField.setPrefWidth(width);
                     textField.positionCaret(textField.getCaretPosition());

@@ -40,7 +40,8 @@ public class ResourceExcel {
 
         for (int i = 0; i < tableTitles.length; i++){
             if (tableTitles[i] != null){
-                infInRow.put(("##" + tableTitles[i].replace(" ", "_")), rowData[i]);
+                infInRow.put(("##" + tableTitles[i].replace(" ", "_")
+                        .replace("\n","_")), rowData[i]);
             } else {
                 infInRow.put(tableTitles[i], rowData[i]);
             }
