@@ -35,8 +35,8 @@ public class ResourceExcel {
 
     public static void markData(XSSFWorkbook xlsx){
 
-        String[] tableTitles = scanExcelRow(xlsx, headingNumber);
-        String[] rowData = scanExcelRow(xlsx, rowNumber);
+        String[] tableTitles = scanExcelRow(xlsx, headingNumber, true);
+        String[] rowData = scanExcelRow(xlsx, rowNumber, false);
 
         for (int i = 0; i < tableTitles.length; i++){
             if (tableTitles[i] != null){
@@ -48,7 +48,7 @@ public class ResourceExcel {
         }
     }
 
-    private static String[] scanExcelRow(XSSFWorkbook xlsx, int numberOfRow){
+    private static String[] scanExcelRow(XSSFWorkbook xlsx, int numberOfRow, boolean isHeader){
 
         XSSFSheet sheet = xlsx.getSheetAt(0);
         XSSFRow row = sheet.getRow(numberOfRow);
@@ -58,7 +58,7 @@ public class ResourceExcel {
         Iterator<Cell> cellIter = row.cellIterator();
         while (cellIter.hasNext()) {
             XSSFCell cell = (XSSFCell) cellIter.next();
-            if (cell == null || cell.getCellType() == CellType.BLANK){
+            if ((cell == null || cell.getCellType() == CellType.BLANK) && isHeader){
 
                 cell = getNotNullCell(xlsx, index, numberOfRow - 1);
             }
