@@ -20,9 +20,7 @@ import org.example.docwizard.eventHandlers.MainWindowEventHandler;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -173,6 +171,24 @@ public class FileScanner {
                 try {
                     latch.await();
                     isScanned = true;
+                    res.sort(new Comparator<String>() {
+                        @Override
+                        public int compare(String s1, String s2) {
+                            int count1 = countUnderscores(s1);
+                            int count2 = countUnderscores(s2);
+
+                            if (count1 != count2) {
+                                return Integer.compare(count2, count1);
+
+                            } else {
+                                return Integer.compare(s2.length(), s1.length());
+                            }
+                        }
+
+                        private int countUnderscores(String s) {
+                            return (int) s.chars().filter(c -> c == '_').count();
+                        }
+                    });
 
                 } catch (InterruptedException e) {
                     return null;
