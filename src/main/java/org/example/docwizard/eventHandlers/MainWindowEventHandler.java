@@ -183,7 +183,8 @@ public class MainWindowEventHandler {
         }
     }
     private static void replaceAll(StringBuilder sb, String find, String replace){
-        Pattern p = Pattern.compile(find);
+        String escapedFind = Pattern.quote(find);
+        Pattern p = Pattern.compile(escapedFind);
         Matcher matcher = p.matcher(sb);
         int startIndex = 0;
         while(matcher.find(startIndex)){
