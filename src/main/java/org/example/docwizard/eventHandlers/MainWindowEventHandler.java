@@ -150,6 +150,8 @@ public class MainWindowEventHandler {
             }
 
             XWPFRun newRun = paragraph.createRun();
+            newRun.setBold(false);
+            newRun.setFontFamily("Arial");
 
             if(paragraphText.toString().contains("\n")){
                 String[] lines = paragraphText.toString().split("\n");
@@ -158,6 +160,7 @@ public class MainWindowEventHandler {
                     return;
                 }
                 newRun.setText(lines[0], 0);
+
 
                 for(int j=1; j<lines.length; j++){
                     newRun.addBreak();

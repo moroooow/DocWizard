@@ -13,8 +13,7 @@ import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.apache.poi.xwpf.usermodel.XWPFDocument;
-import org.apache.poi.xwpf.usermodel.XWPFParagraph;
+import org.apache.poi.xwpf.usermodel.*;
 import org.example.docwizard.eventHandlers.MainWindowEventHandler;
 
 import java.io.File;
@@ -232,6 +231,16 @@ public class FileScanner {
             String str = par.getText();
             findingMatches(str, res);
         }
+        for (XWPFTable tbl : doc.getTables()) {
+            for (XWPFTableRow row : tbl.getRows()) {
+                for (XWPFTableCell cell : row.getTableCells()) {
+                    for(XWPFParagraph par: cell.getParagraphs()){
+                        findingMatches(par.getText(), res);
+                    }
+                }
+            }
+        }
+
     }
 
     private static void findingMatches(String str, ArrayList<String> res) {
