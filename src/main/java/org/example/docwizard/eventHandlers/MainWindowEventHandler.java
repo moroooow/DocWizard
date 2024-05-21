@@ -18,6 +18,7 @@ import org.apache.poi.xssf.usermodel.*;
 import org.apache.poi.xwpf.usermodel.*;
 import org.example.docwizard.FileScanner;
 import org.example.docwizard.ResourceExcel;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTHyperlink;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -126,9 +127,15 @@ public class MainWindowEventHandler {
 
 
     private static void replaceTextInParagraphs(List<XWPFParagraph> paragraphs, List<String> originalText, List<String> updatedText) {
-        paragraphs.forEach(paragraph -> replaceTextInParagraph(paragraph, originalText, updatedText));
+        paragraphs.forEach(paragraph -> {
+            try {
+                replaceTextInParagraph(paragraph, originalText, updatedText);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
-    private static void replaceTextInParagraph(XWPFParagraph paragraph, List<String> originalText, List<String> updatedText) {
+    private static void replaceTextInParagraph(XWPFParagraph paragraph, List<String> originalText, List<String> updatedText) throws Exception {
         StringBuilder paragraphText = new StringBuilder(paragraph.getParagraphText());
 
         for(int i = 0; i < originalText.size(); i ++){
@@ -136,10 +143,10 @@ public class MainWindowEventHandler {
                 continue;
             }
             boolean flagHref = false;
-            String hrefText = "<a href="+ updatedText.get(i) + ">" + updatedText.get(i) + "</a>";
 
             if(updatedText.get(i).contains("//")){
-                replaceAll(paragraphText, originalText.get(i),hrefText);
+                // delete original text now, replace in hyperlink creation part
+                replaceAll(paragraphText, originalText.get(i),"");
                 flagHref = true;
             } else {
                 replaceAll(paragraphText,originalText.get(i), updatedText.get(i));
@@ -170,21 +177,37 @@ public class MainWindowEventHandler {
                 newRun.setText(paragraphText.toString());
             }
 
-            if(flagHref){
-                String[] splitedHyperLinks = paragraphText.toString().split(hrefText);
 
-                for(int j = 0;  j < splitedHyperLinks.length; j++){
-                    XWPFHyperlinkRun hyperlinkRun = paragraph.createHyperlinkRun(hrefText);
-                    hyperlinkRun.setText(updatedText.get(i));
-                    hyperlinkRun.setColor("0000FF");
-                    hyperlinkRun.setUnderline(UnderlinePatterns.SINGLE);
-                    paragraph.addRun(hyperlinkRun);
-                }
-
+            if(flagHref)
+            {
+                XWPFRun run = paragraph.createRun();
+                run.setText(paragraphText.toString());
+                String hyperlink = "file://" + updatedText.get(i).substring(2).replace("\\", "/");
+                XWPFHyperlinkRun hyperlinkrun = createHyperlinkRun(paragraph, hyperlink);
+                hyperlinkrun.setText(updatedText.get(i).substring(2));
+                hyperlinkrun.setColor("0000FF");
+                hyperlinkrun.setUnderline(UnderlinePatterns.SINGLE);
+                paragraph.addRun(hyperlinkrun);
             }
 
         }
     }
+
+    static XWPFHyperlinkRun createHyperlinkRun(XWPFParagraph paragraph, String uri) throws Exception {
+        String rId = paragraph.getPart().getPackagePart().addExternalRelationship(
+                uri,
+                XWPFRelation.HYPERLINK.getRelation()
+        ).getId();
+        CTHyperlink cthyperLink = paragraph.getCTP().addNewHyperlink();
+        cthyperLink.setId(rId);
+        cthyperLink.addNewR();
+        return new XWPFHyperlinkRun(
+                cthyperLink,
+                cthyperLink.getRArray(0),
+                paragraph
+        );
+    }
+
     private static void replaceAll(StringBuilder sb, String find, String replace){
         String escapedFind = Pattern.quote(find);
         Pattern p = Pattern.compile(escapedFind);
