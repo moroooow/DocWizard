@@ -135,7 +135,7 @@ public class MainWindowEventHandler {
             }
         });
     }
-    private static void replaceTextInParagraph(XWPFParagraph paragraph, List<String> originalText, List<String> updatedText) throws Exception {
+    private static void replaceTextInParagraph(XWPFParagraph paragraph, List<String> originalText, List<String> updatedText){
         StringBuilder paragraphText = new StringBuilder(paragraph.getParagraphText());
 
         for(int i = 0; i < originalText.size(); i ++){
@@ -144,7 +144,7 @@ public class MainWindowEventHandler {
             }
             boolean flagHref = false;
 
-            if(updatedText.get(i).contains("//")){
+            if(updatedText.get(i).contains("\\")){
                 // delete original text now, replace in hyperlink creation part
                 replaceAll(paragraphText, originalText.get(i),"");
                 flagHref = true;
@@ -193,7 +193,7 @@ public class MainWindowEventHandler {
         }
     }
 
-    static XWPFHyperlinkRun createHyperlinkRun(XWPFParagraph paragraph, String uri) throws Exception {
+    static XWPFHyperlinkRun createHyperlinkRun(XWPFParagraph paragraph, String uri){
         String rId = paragraph.getPart().getPackagePart().addExternalRelationship(
                 uri,
                 XWPFRelation.HYPERLINK.getRelation()
