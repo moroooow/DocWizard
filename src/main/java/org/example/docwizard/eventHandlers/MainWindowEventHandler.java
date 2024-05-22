@@ -182,7 +182,7 @@ public class MainWindowEventHandler {
             {
                 XWPFRun run = paragraph.createRun();
                 run.setText(paragraphText.toString());
-                String hyperlink = "file://" + updatedText.get(i).substring(2).replace("\\", "/");
+                String hyperlink = "file://" + updatedText.get(i).substring(2).replace("\\", "/").replace(" ", "%20");
                 XWPFHyperlinkRun hyperlinkrun = createHyperlinkRun(paragraph, hyperlink);
                 hyperlinkrun.setText(updatedText.get(i).substring(2));
                 hyperlinkrun.setColor("0000FF");
